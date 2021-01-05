@@ -12,7 +12,7 @@
 
 namespace bustub {
 
-TEST(BPlusTreeTests, DISABLED_DeleteTest1) {
+TEST(BPlusTreeTests, DeleteTest1) {
   // create KeyComparator and index schema
   std::string createStmt = "a bigint";
   Schema *key_schema = ParseCreateStatement(createStmt);
@@ -21,7 +21,7 @@ TEST(BPlusTreeTests, DISABLED_DeleteTest1) {
   DiskManager *disk_manager = new DiskManager("test.db");
   BufferPoolManager *bpm = new BufferPoolManager(50, disk_manager);
   // create b+ tree
-  BPlusTree<GenericKey<8>, RID, GenericComparator<8>> tree("foo_pk", bpm, comparator);
+  BPlusTree<GenericKey<8>, RID, GenericComparator<8>> tree("foo_pk", bpm, comparator, 2, 3);
   GenericKey<8> index_key;
   RID rid;
   // create transaction
@@ -63,12 +63,15 @@ TEST(BPlusTreeTests, DISABLED_DeleteTest1) {
 
   EXPECT_EQ(current_key, keys.size() + 1);
 
-  std::vector<int64_t> remove_keys = {1, 5};
+  std::vector<int64_t> remove_keys = {3, 5};
+  LOG_DEBUG("Haha\n");
   for (auto key : remove_keys) {
+    LOG_DEBUG("delete key is %ld\n", key);
     index_key.SetFromInteger(key);
     tree.Remove(index_key, transaction);
+    std::string filename = std::to_string(key) + std::string("my-tree.dot");
+    tree.Draw(bpm, filename);
   }
-
   start_key = 2;
   current_key = start_key;
   int64_t size = 0;
@@ -92,7 +95,7 @@ TEST(BPlusTreeTests, DISABLED_DeleteTest1) {
   remove("test.log");
 }
 
-TEST(BPlusTreeTests, DISABLED_DeleteTest2) {
+TEST(BPlusTreeTests, DeleteTest2) {
   // create KeyComparator and index schema
   Schema *key_schema = ParseCreateStatement("a bigint");
   GenericComparator<8> comparator(key_schema);
@@ -147,7 +150,6 @@ TEST(BPlusTreeTests, DISABLED_DeleteTest2) {
     index_key.SetFromInteger(key);
     tree.Remove(index_key, transaction);
   }
-
   start_key = 2;
   current_key = start_key;
   int64_t size = 0;

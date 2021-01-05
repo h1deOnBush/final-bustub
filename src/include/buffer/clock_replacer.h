@@ -47,6 +47,7 @@ class ClockReplacer : public Replacer {
 
  private:
   // TODO(student): implement me!
+  size_t PAGENUMS;
 };
 
 }  // namespace bustub

@@ -20,7 +20,6 @@
 #include "recovery/log_manager.h"
 #include "storage/disk/disk_manager.h"
 #include "storage/page/page.h"
-
 namespace bustub {
 
 /**
@@ -152,6 +151,11 @@ class BufferPoolManager {
    */
   void FlushAllPagesImpl();
 
+ private:
+  // added helper method
+  Page getPage(frame_id_t frame);
+  // find VictimPage from the free_list_ first, then from the replacer
+  frame_id_t findVictimPage();
   /** Number of pages in the buffer pool. */
   size_t pool_size_;
   /** Array of buffer pool pages. */
@@ -167,6 +171,6 @@ class BufferPoolManager {
   /** List of free pages. */
   std::list<frame_id_t> free_list_;
   /** This latch protects shared data structures. We recommend updating this comment to describe what it protects. */
-  std::mutex latch_;
+  std::mutex latch_;  //   初步考虑latch保护 disk_manager_, page_table_, free_list_;
 };
 }  // namespace bustub

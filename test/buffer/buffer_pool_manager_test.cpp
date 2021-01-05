@@ -20,7 +20,7 @@ namespace bustub {
 
 // NOLINTNEXTLINE
 // Check whether pages containing terminal characters can be recovered
-TEST(BufferPoolManagerTest, DISABLED_BinaryDataTest) {
+TEST(BufferPoolManagerTest, BinaryDataTest) {
   const std::string db_name = "test.db";
   const size_t buffer_pool_size = 10;
 
@@ -49,8 +49,8 @@ TEST(BufferPoolManagerTest, DISABLED_BinaryDataTest) {
   random_binary_data[PAGE_SIZE - 1] = '\0';
 
   // Scenario: Once we have a page, we should be able to read and write content.
-  std::memcpy(page0->GetData(), random_binary_data, PAGE_SIZE);
-  EXPECT_EQ(0, std::memcmp(page0->GetData(), random_binary_data, PAGE_SIZE));
+  std::strncpy(page0->GetData(), random_binary_data, PAGE_SIZE);
+  EXPECT_EQ(0, std::strcmp(page0->GetData(), random_binary_data));
 
   // Scenario: We should be able to create new pages until we fill up the buffer pool.
   for (size_t i = 1; i < buffer_pool_size; ++i) {
@@ -68,13 +68,15 @@ TEST(BufferPoolManagerTest, DISABLED_BinaryDataTest) {
     EXPECT_EQ(true, bpm->UnpinPage(i, true));
     bpm->FlushPage(i);
   }
-  for (int i = 0; i < 5; ++i) {
+  for (int i = 0; i < 4; ++i) {
     EXPECT_NE(nullptr, bpm->NewPage(&page_id_temp));
     bpm->UnpinPage(page_id_temp, false);
   }
   // Scenario: We should be able to fetch the data we wrote a while ago.
+
   page0 = bpm->FetchPage(0);
-  EXPECT_EQ(0, memcmp(page0->GetData(), random_binary_data, PAGE_SIZE));
+  // printf("\n pageid is %d \n", page0->GetPageId());
+  EXPECT_EQ(0, strcmp(page0->GetData(), random_binary_data));
   EXPECT_EQ(true, bpm->UnpinPage(0, true));
 
   // Shutdown the disk manager and remove the temporary file we created.
@@ -86,7 +88,7 @@ TEST(BufferPoolManagerTest, DISABLED_BinaryDataTest) {
 }
 
 // NOLINTNEXTLINE
-TEST(BufferPoolManagerTest, DISABLED_SampleTest) {
+TEST(BufferPoolManagerTest, SampleTest) {
   const std::string db_name = "test.db";
   const size_t buffer_pool_size = 10;
 
