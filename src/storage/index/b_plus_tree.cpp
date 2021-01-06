@@ -330,7 +330,9 @@ bool BPLUSTREE_TYPE::CoalesceOrRedistribute(N *node, Transaction *transaction) {
   page_id_t neighbor_page_Id;
   int index = parent_node->ValueIndex(node->GetPageId());
   int neighbor_index;
-
+  if (parent_node->GetSize() == 1) {
+    return false;
+  }
   if (index == 0) {
     neighbor_index = 1;
     neighbor_page_Id = parent_node->ValueAt(neighbor_index);

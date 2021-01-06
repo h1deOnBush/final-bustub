@@ -51,7 +51,12 @@ INDEXITERATOR_TYPE &INDEXITERATOR_TYPE::operator++() {
     index_ = 0;
     pageId_ = leafnode->GetNextPageId();
   }
-  buffer_pool_manager_->UnpinPage(pageId_, false);
+  if (pageId_ == INVALID_PAGE_ID) {
+    is_end_ = true;
+  }
+  else{
+    buffer_pool_manager_->UnpinPage(pageId_, false);
+  }
   return *this;
 }
 
