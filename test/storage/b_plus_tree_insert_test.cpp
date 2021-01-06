@@ -61,7 +61,10 @@ TEST(BPlusTreeTests, InsertTest1) {
   }
 
   EXPECT_EQ(current_key, keys.size() + 1);
-
+  std::cout << "\n";
+  for (auto &pair : tree) {
+    std::cout << pair.second << std::endl;
+  }
   bpm->UnpinPage(HEADER_PAGE_ID, true);
   delete key_schema;
   delete transaction;

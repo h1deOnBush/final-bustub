@@ -22,7 +22,7 @@ namespace bustub {
 // Check whether pages containing terminal characters can be recovered
 TEST(BufferPoolManagerTest, BinaryDataTest) {
   const std::string db_name = "test.db";
-  const size_t buffer_pool_size = 10;
+  const size_t buffer_pool_size = 3;
 
   std::random_device r;
   std::default_random_engine rng(r());
@@ -55,22 +55,26 @@ TEST(BufferPoolManagerTest, BinaryDataTest) {
   // Scenario: We should be able to create new pages until we fill up the buffer pool.
   for (size_t i = 1; i < buffer_pool_size; ++i) {
     EXPECT_NE(nullptr, bpm->NewPage(&page_id_temp));
+    std::cout << page_id_temp << std::endl;
   }
 
   // Scenario: Once the buffer pool is full, we should not be able to create any new pages.
   for (size_t i = buffer_pool_size; i < buffer_pool_size * 2; ++i) {
     EXPECT_EQ(nullptr, bpm->NewPage(&page_id_temp));
+    std::cout << i << std::endl;
   }
 
   // Scenario: After unpinning pages {0, 1, 2, 3, 4} and pinning another 4 new pages,
   // there would still be one cache frame left for reading page 0.
-  for (int i = 0; i < 5; ++i) {
+  for (int i = 0; i < (int)buffer_pool_size; ++i) {
     EXPECT_EQ(true, bpm->UnpinPage(i, true));
     bpm->FlushPage(i);
   }
-  for (int i = 0; i < 4; ++i) {
+  // for (int i = 0; i < 4; ++i) {
+  for (int i = 0; i < (int)buffer_pool_size - 1; ++i) {
     EXPECT_NE(nullptr, bpm->NewPage(&page_id_temp));
     bpm->UnpinPage(page_id_temp, false);
+    std::cout << page_id_temp << std::endl;
   }
   // Scenario: We should be able to fetch the data we wrote a while ago.
 

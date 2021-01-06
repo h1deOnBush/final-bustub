@@ -120,8 +120,10 @@ TEST(BPlusTreeTests, InsertTest2) {
 
   int64_t start_key = 1;
   int64_t current_key = start_key;
+  std::cout << "\n";
   for (auto pair : tree) {
     auto location = pair.second;
+    std::cout << location << std::endl;
     EXPECT_EQ(location.GetPageId(), 0);
     EXPECT_EQ(location.GetSlotNum(), current_key);
     current_key = current_key + 1;
@@ -351,25 +353,32 @@ TEST(BPlusTreeTests, ScaleTest) {
     index_key.SetFromInteger(key);
     tree.Insert(index_key, rid, transaction);
   }
+
   std::vector<RID> rids;
   for (auto key : keys) {
     rids.clear();
     index_key.SetFromInteger(key);
     tree.GetValue(index_key, &rids);
     EXPECT_EQ(rids.size(), 1);
-
     int64_t value = key & 0xFFFFFFFF;
     EXPECT_EQ(rids[0].GetSlotNum(), value);
   }
 
   int64_t start_key = 1;
   int64_t current_key = start_key;
+  std::cout << "\n";
+
   for (auto pair : tree) {
     (void)pair;
+    std::cout << "\n" << current_key << "\n";
     current_key = current_key + 1;
+    if (current_key == 3557){
+      std::cout << "\n test \n";
+    }
   }
+  LOG_DEBUG("\nHAHA\n");
   EXPECT_EQ(current_key, keys.size() + 1);
-
+  LOG_DEBUG("\nHAHA\n");
   int64_t remove_scale = 9900;
   std::vector<int64_t> remove_keys;
   for (int64_t key = 1; key < remove_scale; key++) {

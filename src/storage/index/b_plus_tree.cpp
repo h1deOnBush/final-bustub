@@ -115,6 +115,9 @@ INDEX_TEMPLATE_ARGUMENTS
 bool BPLUSTREE_TYPE::GetValue(const KeyType &key, std::vector<ValueType> *result, Transaction *transaction) {
   Page *leaf_page = FindLeafPage(key, false);
   bool res = false;
+  if (leaf_page == nullptr) {
+    throw Exception("GetValue functions found not leaf page");
+  }
   auto leaf_node = reinterpret_cast<B_PLUS_TREE_LEAF_PAGE_TYPE *>(leaf_page->GetData());
   if (leaf_node != nullptr) {
     ValueType value;
@@ -194,14 +197,16 @@ bool BPLUSTREE_TYPE::InsertIntoLeaf(const KeyType &key, const ValueType &value, 
     buffer_pool_manager_->UnpinPage(page->GetPageId(), false);
     return false;
   }
+
   leafnode->Insert(key, value, comparator_);
   if (leafnode->GetSize() >= leafnode->GetMaxSize()) {
     auto new_node = Split(leafnode);
     leafnode->SetNextPageId(new_node->GetPageId());
     InsertIntoParent(leafnode, new_node->KeyAt(0), new_node);
   }
-
-  buffer_pool_manager_->UnpinPage(leafnode->GetPageId(), true);
+  else {
+    buffer_pool_manager_->UnpinPage(page->GetPageId(), true);
+  }
 
   return true;
 }
@@ -225,7 +230,7 @@ N *BPLUSTREE_TYPE::Split(N *node) {
   N *new_node = reinterpret_cast<N *>(page->GetData());
   new_node->Init(page->GetPageId(), node->GetParentPageId(), node->GetMaxSize());
   node->MoveHalfTo(new_node, buffer_pool_manager_);
-  buffer_pool_manager_->UnpinPage(new_node->GetPageId(), true);
+  // buffer_pool_manager_->UnpinPage(new_node->GetPageId(), true);
   return new_node;
 }
 
@@ -265,6 +270,9 @@ void BPLUSTREE_TYPE::InsertIntoParent(BPlusTreePage *old_node, const KeyType &ke
     buffer_pool_manager_->UnpinPage(new_root_node->GetPageId(), true);
   } else {
     Page *parent_page = buffer_pool_manager_->FetchPage(parent_page_id);
+    if (parent_page == nullptr) {
+      throw Exception(ExceptionType::OUT_OF_MEMORY, "out of memory in InsertIntoParent");
+    }
     auto *parent_node =
         reinterpret_cast<BPlusTreeInternalPage<KeyType, page_id_t, KeyComparator> *>(parent_page->GetData());
     parent_node->InsertNodeAfter(old_node->GetPageId(), key, new_node->GetPageId());
@@ -272,7 +280,8 @@ void BPLUSTREE_TYPE::InsertIntoParent(BPlusTreePage *old_node, const KeyType &ke
     if (parent_node->GetSize() >= parent_node->GetMaxSize()) {
       auto new_parent_node = Split(parent_node);
       InsertIntoParent(parent_node, new_parent_node->KeyAt(0), new_parent_node);
-    } else {
+    }
+    else {
       buffer_pool_manager_->UnpinPage(parent_node->GetPageId(), true);
     }
   }
@@ -517,7 +526,7 @@ INDEXITERATOR_TYPE BPLUSTREE_TYPE::begin() {
   KeyType key{};
   Page *leftmost_leafPage = FindLeafPage(key, true);
   auto *leafnode = reinterpret_cast<B_PLUS_TREE_LEAF_PAGE_TYPE *>(leftmost_leafPage->GetData());
-  INDEXITERATOR_TYPE iterator = INDEXITERATOR_TYPE(leafnode->GetPageId(), 0, buffer_pool_manager_);
+  INDEXITERATOR_TYPE iterator = INDEXITERATOR_TYPE(leafnode->GetPageId(), 0, leafnode->GetSize(), buffer_pool_manager_);
   buffer_pool_manager_->UnpinPage(leftmost_leafPage->GetPageId(), false);
   return iterator;
 }
@@ -540,7 +549,7 @@ INDEXITERATOR_TYPE BPLUSTREE_TYPE::Begin(const KeyType &key) {
   if (index == leafnode->GetSize()) {
     return INDEXITERATOR_TYPE(true);
   }
-  return INDEXITERATOR_TYPE(leafnode->GetPageId(), index, buffer_pool_manager_);
+  return INDEXITERATOR_TYPE(leafnode->GetPageId(), index, leafnode->GetSize(), buffer_pool_manager_);
 }
 
 /*
@@ -565,6 +574,7 @@ Page *BPLUSTREE_TYPE::FindLeafPage(const KeyType &key, bool leftMost) {
   }
   Page *page = buffer_pool_manager_->FetchPage(root_page_id_);
   if (page == nullptr) {
+    throw Exception("Not Found Leaf Page");
     return nullptr;
   }
   auto *node = reinterpret_cast<BPlusTreePage *>(page->GetData());
@@ -582,6 +592,7 @@ Page *BPLUSTREE_TYPE::FindLeafPage(const KeyType &key, bool leftMost) {
     buffer_pool_manager_->UnpinPage(pre_pageId, false);
     page = buffer_pool_manager_->FetchPage(pageId);
     if (page == nullptr) {
+      throw Exception("Fetch Page failure  in findleafPage");
       break;
     }
     node = reinterpret_cast<BPlusTreePage *>(page->GetData());

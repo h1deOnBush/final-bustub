@@ -34,6 +34,7 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::Init(page_id_t page_id, page_id_t parent_id, in
   SetParentPageId(parent_id);
   SetMaxSize(max_size);
   SetNextPageId(INVALID_PAGE_ID);
+  std::cout << "\ntree's maxpage is " << max_size << std::endl;
 }
 
 /**

@@ -39,6 +39,7 @@ frame_id_t BufferPoolManager::findVictimPage() {
   if (free_list_.empty()) {
     bool res = replacer_->Victim(&frameId);
     if (!res) {
+      // throw Exception("findVictimPage 有问题\n");
       return INVALID_PAGE_ID;
     }
     return frameId;
@@ -99,7 +100,7 @@ bool BufferPoolManager::UnpinPageImpl(page_id_t page_id, bool is_dirty) {
   }
   frame_id_t frameId = it->second;
   auto &page = pages_[frameId];
-
+  BUSTUB_ASSERT(page.pin_count_ > 0, "the page being unpinning should be pinned before");
   if (page.pin_count_ <= 0) {
     return false;
   }
@@ -108,6 +109,7 @@ bool BufferPoolManager::UnpinPageImpl(page_id_t page_id, bool is_dirty) {
   page.pin_count_ -= 1;
 
   if (page.pin_count_ == 0) {
+    // std::cout << "Unpin page " << page_id << std::endl;
     replacer_->Unpin(frameId);
   }
   return true;
@@ -153,6 +155,7 @@ Page *BufferPoolManager::NewPageImpl(page_id_t *page_id) {
   // Page* page = getPage(index);
   // page->page_id_ = pageId;
   page_id_t pageId = disk_manager_->AllocatePage();
+  // std::cout << "\nnew page is page " << pageId << std::endl;
   frame_id_t victimId = findVictimPage();
   if (victimId == INVALID_PAGE_ID) {
     return nullptr;
