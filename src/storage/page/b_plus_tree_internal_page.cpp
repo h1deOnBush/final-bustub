@@ -29,6 +29,7 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::Init(page_id_t page_id, page_id_t parent_id
   SetParentPageId(parent_id);
   SetSize(0);
   SetMaxSize(max_size);
+  std::cout << "internal treepage's max size is " << max_size << " page is is "<< page_id <<std::endl;
 }
 /*
  * Helper method to get/set the key associated with input "index"(a.k.a

@@ -113,6 +113,9 @@ B_PLUS_TREE_LEAF_PAGE_TYPE *BPLUSTREE_TYPE::Search(const KeyType &key) {
  */
 INDEX_TEMPLATE_ARGUMENTS
 bool BPLUSTREE_TYPE::GetValue(const KeyType &key, std::vector<ValueType> *result, Transaction *transaction) {
+  if (root_page_id_ == INVALID_PAGE_ID) {
+    return false;
+  }
   Page *leaf_page = FindLeafPage(key, false);
   bool res = false;
   if (leaf_page == nullptr) {
@@ -121,12 +124,13 @@ bool BPLUSTREE_TYPE::GetValue(const KeyType &key, std::vector<ValueType> *result
   auto leaf_node = reinterpret_cast<B_PLUS_TREE_LEAF_PAGE_TYPE *>(leaf_page->GetData());
   if (leaf_node != nullptr) {
     ValueType value;
+    buffer_pool_manager_->UnpinPage(leaf_page->GetPageId(), false);
     if (leaf_node->Lookup(key, &value, comparator_)) {
       res = true;
       result->push_back(value);
     }
   }
-  buffer_pool_manager_->UnpinPage(leaf_page->GetPageId(), false);
+
   return res;
 }
 
@@ -169,10 +173,10 @@ void BPLUSTREE_TYPE::StartNewTree(const KeyType &key, const ValueType &value) {
   root_node->Init(rootLeafPage->GetPageId(), INVALID_PAGE_ID, leaf_max_size_);
   root_node->Insert(key, value, comparator_);
   bool insert = IsEmpty();
-  root_page_id_ = rootLeafPage->GetPageId();
+  root_page_id_ = page_id;
   int updateRecord = insert ? 1 : 0;
   UpdateRootPageId(updateRecord);
-  buffer_pool_manager_->UnpinPage(rootLeafPage->GetPageId(), true);
+  buffer_pool_manager_->UnpinPage(page_id, true);
 }
 
 /*
@@ -187,17 +191,18 @@ INDEX_TEMPLATE_ARGUMENTS
 bool BPLUSTREE_TYPE::InsertIntoLeaf(const KeyType &key, const ValueType &value, Transaction *transaction) {
   Page *page = FindLeafPage(key, false);
   if (page == nullptr) {
+    throw Exception("Cannot insert into the leaf, found not page");
     return false;
   }
   auto *leafnode = reinterpret_cast<BPlusTreeLeafPage<KeyType, RID, KeyComparator> *>(page->GetData());
-  RID rid;
+  ValueType rid;
 
   bool res = leafnode->Lookup(key, &rid, comparator_);
   if (res) {
     buffer_pool_manager_->UnpinPage(page->GetPageId(), false);
     return false;
   }
-
+  BUSTUB_ASSERT(leafnode->GetSize() < leafnode->GetMaxSize(), "leaf size should never be its max size");
   leafnode->Insert(key, value, comparator_);
   if (leafnode->GetSize() >= leafnode->GetMaxSize()) {
     auto new_node = Split(leafnode);
@@ -228,9 +233,8 @@ N *BPLUSTREE_TYPE::Split(N *node) {
   }
 
   N *new_node = reinterpret_cast<N *>(page->GetData());
-  new_node->Init(page->GetPageId(), node->GetParentPageId(), node->GetMaxSize());
+  new_node->Init(pageId, INVALID_PAGE_ID, node->GetMaxSize());
   node->MoveHalfTo(new_node, buffer_pool_manager_);
-  // buffer_pool_manager_->UnpinPage(new_node->GetPageId(), true);
   return new_node;
 }
 
@@ -260,10 +264,10 @@ void BPLUSTREE_TYPE::InsertIntoParent(BPlusTreePage *old_node, const KeyType &ke
     auto *new_root_node =
         reinterpret_cast<BPlusTreeInternalPage<KeyType, page_id_t, KeyComparator> *>(newRootPage->GetData());
     new_root_node->Init(new_root_page_id, INVALID_PAGE_ID, internal_max_size_);
-
+    new_root_node->PopulateNewRoot(old_node->GetPageId(), key, new_node->GetPageId());
     old_node->SetParentPageId(new_root_page_id);
     new_node->SetParentPageId(new_root_page_id);
-    new_root_node->PopulateNewRoot(old_node->GetPageId(), key, new_node->GetPageId());
+
     root_page_id_ = new_root_page_id;
     UpdateRootPageId(0);
 
@@ -275,6 +279,8 @@ void BPLUSTREE_TYPE::InsertIntoParent(BPlusTreePage *old_node, const KeyType &ke
     }
     auto *parent_node =
         reinterpret_cast<BPlusTreeInternalPage<KeyType, page_id_t, KeyComparator> *>(parent_page->GetData());
+    BUSTUB_ASSERT(parent_node->GetSize() < parent_node->GetMaxSize(),
+      "internal node size should never be its max size");
     parent_node->InsertNodeAfter(old_node->GetPageId(), key, new_node->GetPageId());
     new_node->SetParentPageId(parent_page_id);
     if (parent_node->GetSize() >= parent_node->GetMaxSize()) {
@@ -545,11 +551,9 @@ INDEXITERATOR_TYPE BPLUSTREE_TYPE::Begin(const KeyType &key) {
   Page *leafPage = FindLeafPage(key, false);
   auto *leafnode = reinterpret_cast<B_PLUS_TREE_LEAF_PAGE_TYPE *>(leafPage->GetData());
   int index = leafnode->KeyIndex(key, comparator_);
+  auto iter =  INDEXITERATOR_TYPE(leafnode->GetPageId(), index, leafnode->GetSize(), buffer_pool_manager_);
   buffer_pool_manager_->UnpinPage(leafPage->GetPageId(), false);
-  if (index == leafnode->GetSize()) {
-    return INDEXITERATOR_TYPE(true);
-  }
-  return INDEXITERATOR_TYPE(leafnode->GetPageId(), index, leafnode->GetSize(), buffer_pool_manager_);
+  return iter;
 }
 
 /*
@@ -582,11 +586,11 @@ Page *BPLUSTREE_TYPE::FindLeafPage(const KeyType &key, bool leftMost) {
 
   while (!node->IsLeafPage()) {
     page_id_t pre_pageId = pageId;
+    auto internal_node = reinterpret_cast<BPlusTreeInternalPage<KeyType, page_id_t, KeyComparator> *>(node);
     if (leftMost) {
-      pageId = reinterpret_cast<BPlusTreeInternalPage<KeyType, page_id_t, KeyComparator> *>(node)->ValueAt(0);
+      pageId = internal_node->ValueAt(0);
     } else {
-      pageId =
-          reinterpret_cast<BPlusTreeInternalPage<KeyType, page_id_t, KeyComparator> *>(node)->Lookup(key, comparator_);
+      pageId = internal_node->Lookup(key, comparator_);
     }
 
     buffer_pool_manager_->UnpinPage(pre_pageId, false);
@@ -667,6 +671,10 @@ INDEX_TEMPLATE_ARGUMENTS
 void BPLUSTREE_TYPE::ToGraph(BPlusTreePage *page, BufferPoolManager *bpm, std::ofstream &out) const {
   std::string leaf_prefix("LEAF_");
   std::string internal_prefix("INT_");
+  if (page == nullptr) {
+    std::cout << "crazy" << std::endl;
+  }
+  std::cout << "debugging the page" << page->GetPageId() << std::endl;
 
   if (page->IsLeafPage()) {
     LeafPage *leaf = reinterpret_cast<LeafPage *>(page);
@@ -730,6 +738,13 @@ void BPLUSTREE_TYPE::ToGraph(BPlusTreePage *page, BufferPoolManager *bpm, std::o
     // Print leaves
     for (int i = 0; i < inner->GetSize(); i++) {
       auto child_page = reinterpret_cast<BPlusTreePage *>(bpm->FetchPage(inner->ValueAt(i))->GetData());
+
+      if (child_page == nullptr) {
+        std::cout << inner->GetSize() << " / " << inner->GetParentPageId() << " / " << inner->GetMinSize() << " / "
+                  << inner->GetMaxSize() << " / " <<inner->GetPageId() << " / " << i << "/" << inner->ValueAt(0)
+                  << std::endl;
+      }
+
       ToGraph(child_page, bpm, out);
       if (i > 0) {
         auto sibling_page = reinterpret_cast<BPlusTreePage *>(bpm->FetchPage(inner->ValueAt(i - 1))->GetData());
@@ -737,6 +752,7 @@ void BPLUSTREE_TYPE::ToGraph(BPlusTreePage *page, BufferPoolManager *bpm, std::o
           out << "{rank=same " << internal_prefix << sibling_page->GetPageId() << " " << internal_prefix
               << child_page->GetPageId() << "};\n";
         }
+        bpm->UnpinPage(sibling_page->GetPageId(), false);
       }
     }
   }
