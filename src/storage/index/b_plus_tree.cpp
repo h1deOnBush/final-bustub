@@ -202,7 +202,7 @@ bool BPLUSTREE_TYPE::InsertIntoLeaf(const KeyType &key, const ValueType &value, 
     buffer_pool_manager_->UnpinPage(page->GetPageId(), false);
     return false;
   }
-  BUSTUB_ASSERT(leafnode->GetSize() < leafnode->GetMaxSize(), "leaf size should never be its max size");
+  BUSTUB_ASSERT(leafnode->GetSize() <= leafnode->GetMaxSize(), "leaf size should never be its max size");
   leafnode->Insert(key, value, comparator_);
   if (leafnode->GetSize() >= leafnode->GetMaxSize()) {
     auto new_node = Split(leafnode);
@@ -279,7 +279,7 @@ void BPLUSTREE_TYPE::InsertIntoParent(BPlusTreePage *old_node, const KeyType &ke
     }
     auto *parent_node =
         reinterpret_cast<BPlusTreeInternalPage<KeyType, page_id_t, KeyComparator> *>(parent_page->GetData());
-    BUSTUB_ASSERT(parent_node->GetSize() < parent_node->GetMaxSize(),
+    BUSTUB_ASSERT(parent_node->GetSize() <= parent_node->GetMaxSize(),
       "internal node size should never be its max size");
     parent_node->InsertNodeAfter(old_node->GetPageId(), key, new_node->GetPageId());
     new_node->SetParentPageId(parent_page_id);
@@ -318,7 +318,7 @@ void BPLUSTREE_TYPE::Remove(const KeyType &key, Transaction *transaction) {
   if (origin_size != update_size + 1) {
     std::cout << "删除失败" << std::endl;
   }
-  if (node->GetSize() < node->GetMinSize()) {
+  if (node->GetSize() <= node->GetMinSize()) {
     bool deleted = CoalesceOrRedistribute(node, transaction);
     buffer_pool_manager_->UnpinPage(node->GetPageId(), true);
     if (deleted) {
@@ -360,7 +360,7 @@ bool BPLUSTREE_TYPE::CoalesceOrRedistribute(N *&node, Transaction *transaction) 
   int node_index = parent_node->ValueIndex(node->GetPageId());
 
   bool coalesced = false;
-  if (node->GetSize() + sibling_node->GetSize() < node->GetMaxSize()) {
+  if (node->GetSize() + sibling_node->GetSize() <= node->GetMaxSize()) {
     // 可以合成
     coalesced = true;
 
@@ -423,7 +423,7 @@ template <typename N>
 bool BPLUSTREE_TYPE::Coalesce(N *neighbor_node, N *node,
                               BPlusTreeInternalPage<KeyType, page_id_t, KeyComparator> *parent, int index,
                               Transaction *transaction) {
-  assert(neighbor_node->GetSize() + node->GetSize() < node->GetMaxSize());
+  assert(neighbor_node->GetSize() + node->GetSize() <= node->GetMaxSize());
   if (node->IsLeafPage()) { // 叶子节点
     auto leaf_node = reinterpret_cast<BPlusTreeLeafPage<KeyType, RID, KeyComparator> *>(node);
     auto leaf_neighbor_node = reinterpret_cast<BPlusTreeLeafPage<KeyType, RID, KeyComparator> *>(neighbor_node);
@@ -437,7 +437,7 @@ bool BPLUSTREE_TYPE::Coalesce(N *neighbor_node, N *node,
     internal_node->MoveAllTo(internal_neighbor_node, key, buffer_pool_manager_); //
   }
   parent->Remove(index);
-  if (parent->GetSize() < parent->GetMinSize()) {
+  if (parent->GetSize() <= parent->GetMinSize()) {
     bool res = CoalesceOrRedistribute(parent, transaction);
     return res;
   }
@@ -777,7 +777,7 @@ void BPLUSTREE_TYPE::ToGraph(BPlusTreePage *page, BufferPoolManager *bpm, std::o
           out << "{rank=same " << internal_prefix << sibling_page->GetPageId() << " " << internal_prefix
               << child_page->GetPageId() << "};\n";
         }
-
+        bpm->UnpinPage(sibling_page->GetPageId(), false);
       }
     }
   }
