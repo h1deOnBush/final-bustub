@@ -175,6 +175,7 @@ bool BPLUSTREE_TYPE::InsertIntoLeaf(const KeyType &key, const ValueType &value, 
 
   bool res = leafnode->Lookup(key, &rid, comparator_);
   if (res) {
+    UnlockPage(page, true);
     buffer_pool_manager_->UnpinPage(page->GetPageId(), false);
     return false;
   }
@@ -186,6 +187,11 @@ bool BPLUSTREE_TYPE::InsertIntoLeaf(const KeyType &key, const ValueType &value, 
     InsertIntoParent(leafnode, new_node->KeyAt(0), new_node);
   }
   else {
+    auto page_set = transaction->GetPageSet();
+    auto pn = page_set->back();
+    page_set->pop_back();
+    BUSTUB_ASSERT(page_set->empty() && pn->GetPageId() == page->GetPageId(),
+      "pageset wrong in InsertIntoLeaf");
     buffer_pool_manager_->UnpinPage(page->GetPageId(), true);
   }
   // std::cout << "Insert the key" << key << std::endl;
@@ -204,7 +210,6 @@ template <typename N>
 N *BPLUSTREE_TYPE::Split(N *node) {
   page_id_t pageId;
   Page *page = buffer_pool_manager_->NewPage(&pageId);
-  LockPage(page, true);
   if (page == nullptr) {
     throw Exception(ExceptionType::OUT_OF_MEMORY, "out of memory in split b_plus_tree");
   }
@@ -234,7 +239,7 @@ void BPLUSTREE_TYPE::InsertIntoParent(BPlusTreePage *old_node, const KeyType &ke
   if (parent_page_id == INVALID_PAGE_ID) {
     page_id_t new_root_page_id;
     Page *newRootPage = buffer_pool_manager_->NewPage(&new_root_page_id);
-
+    LockPage(newRootPage, true);
     if (newRootPage == nullptr) {
       throw Exception(ExceptionType::OUT_OF_MEMORY,
                       "Can not InsertIntoParent, because we can't give"
@@ -244,17 +249,25 @@ void BPLUSTREE_TYPE::InsertIntoParent(BPlusTreePage *old_node, const KeyType &ke
         reinterpret_cast<BPlusTreeInternalPage<KeyType, page_id_t, KeyComparator> *>(newRootPage->GetData());
     new_root_node->Init(new_root_page_id, INVALID_PAGE_ID, internal_max_size_);
     new_root_node->PopulateNewRoot(old_node->GetPageId(), key, new_node->GetPageId());
+
     old_node->SetParentPageId(new_root_page_id);
     new_node->SetParentPageId(new_root_page_id);
+    auto page_set = transaction->GetPageSet();
+    auto pn = page_set->back();
+    page_set->pop_back();
+    UnlockPage(pn, true);
+    BUSTUB_ASSERT(page_set->empty() && pn->GetPageId() == old_node->GetPageId(),
+                  "pageset wrong in InsertIntoParent1");
+    buffer_pool_manager_->UnpinPage(old_node->GetPageId(), true);
+    buffer_pool_manager_->UnpinPage(new_node->GetPageId(), true);
 
     root_page_id_ = new_root_page_id;
     UpdateRootPageId(0);
     UnlockPage(newRootPage, true);
     buffer_pool_manager_->UnpinPage(new_root_node->GetPageId(), true);
-  } else {
+  }
+  else {   // 非根结点
     Page *parent_page = buffer_pool_manager_->FetchPage(parent_page_id);
-
-
     if (parent_page == nullptr) {
       throw Exception(ExceptionType::OUT_OF_MEMORY, "out of memory in InsertIntoParent");
     }
@@ -264,18 +277,30 @@ void BPLUSTREE_TYPE::InsertIntoParent(BPlusTreePage *old_node, const KeyType &ke
       "internal node size should never be its max size");
     parent_node->InsertNodeAfter(old_node->GetPageId(), key, new_node->GetPageId());
     new_node->SetParentPageId(parent_page_id);
+    buffer_pool_manager_->UnpinPage(new_node->GetPageId(), true);
+
+    auto page_set = transaction->GetPageSet();
+    auto pn = page_set->back();
+    page_set->pop_back();
+    UnlockPage(pn, true);
+    BUSTUB_ASSERT(page_set->empty() && pn->GetPageId() == old_node->GetPageId(),
+                  "pageset wrong in InsertIntoParent2");
+    buffer_pool_manager_->UnpinPage(old_node->GetPageId(), true);
+
     if (parent_node->GetSize() >= parent_node->GetMaxSize()) {
       auto new_parent_node = Split(parent_node);
       InsertIntoParent(parent_node, new_parent_node->KeyAt(0), new_parent_node);
     }
     else {
+      auto page_set1 = transaction->GetPageSet();
+      auto pn1 = page_set->back();
+      page_set->pop_back();
+      UnlockPage(pn, true);
+      BUSTUB_ASSERT(page_set1->empty() && pn1->GetPageId() == parent_node->GetPageId(),
+                    "pageset wrong in InsertIntoParent3");
       buffer_pool_manager_->UnpinPage(parent_node->GetPageId(), true);
     }
   }
-
-  buffer_pool_manager_->UnpinPage(old_node->GetPageId(), true);
-
-  buffer_pool_manager_->UnpinPage(new_node->GetPageId(), true);
 }
 
 /*****************************************************************************

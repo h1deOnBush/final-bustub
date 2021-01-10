@@ -115,6 +115,7 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::MoveHalfTo(BPlusTreeLeafPage *recipient, Buffer
   int old_size = GetSize();
   int mid_point = (old_size + 1) / 2;
   recipient->CopyNFrom(&array[mid_point], old_size / 2);
+  recipient->SetNextPageId(GetPageId());
   SetSize((old_size + 1) / 2);
 }
 
