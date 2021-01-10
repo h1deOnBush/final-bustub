@@ -595,6 +595,95 @@ INDEXITERATOR_TYPE BPLUSTREE_TYPE::end() { return INDEXITERATOR_TYPE(true); }
 /*****************************************************************************
  * UTILITIES AND DEBUG
  *****************************************************************************/
+
+/*
+ * Lock Page, Fetch page first than Lock it
+ * enable == true means Wlatch
+ * enable == false means Rlatch
+ */
+INDEX_TEMPLATE_ARGUMENTS
+void BPLUSTREE_TYPE::LockPage(Page* page, bool enable) {
+  if (enable) {
+    page->WLatch();
+  }
+  else {
+    page->RLatch();
+  }
+}
+
+/*
+ * Unlock Page, Unlock page first than unpin it
+ * enable == true means WUnlatch
+ * enable == false means RUnlatch
+ */
+INDEX_TEMPLATE_ARGUMENTS
+void BPLUSTREE_TYPE::UnlockPage(bustub::Page *page, bool enable) {
+  if (enable) {
+    page->WUnlatch();
+  }
+  else {
+    page->RUnlatch();
+  }
+}
+
+/*
+ * Safe function,
+ * op == 1 means insert, op == 0 means delete
+ * return true, when 1.1 during insert, the internal page's size + 1 <= internal's maxsize
+ *                   1.2 during insert, the leaf page's size + 1 < leaf's maxsize
+ *                   2.1 during delete, the internal page's size - 1 > internal's minsize
+ *                   2.2 during delete, the leaf page's size - 1 >= leaf's min size
+ */
+INDEX_TEMPLATE_ARGUMENTS
+template <typename N>
+bool BPLUSTREE_TYPE::Safe(N *node, int op) {
+  if (node->IsLeafPage()) {
+    return (op == 1 && node->GetSize() + 1 < node->GetMaxSize()) ||
+           (op == 0 && node->GetSize() - 1 >= node->GetMinSize());
+  } else {
+    return (op == 1 && node->GetSize() + 1 <= node->GetMaxSize()) ||
+           (op == 0 && node->GetSize() - 1 > node->GetMinSize());
+  }
+}
+
+/*
+ * Search
+ */
+INDEX_TEMPLATE_ARGUMENTS
+Page* BPLUSTREE_TYPE::Search(const KeyType &key, int op) {
+  if (root_page_id_ == INVALID_PAGE_ID) {
+    return nullptr;
+  }
+  Page *page = buffer_pool_manager_->FetchPage(root_page_id_);
+  if (page == nullptr) {
+    throw Exception("Not Found leaf page in search function");
+    return nullptr;
+  }
+  LockPage(page, true);
+  std::queue<Page*> q; // a queue to store those page that lock during search
+  q.push(page);
+  auto *node = reinterpret_cast<BPlusTreePage *>(page->GetData());
+  page_id_t pageId = root_page_id_;
+
+  while (!node->IsLeafPage()) {
+    auto *internal_node = reinterpret_cast<BPlusTreeInternalPage<KeyType, page_id_t, KeyComparator> *>(node);
+    pageId = internal_node->Lookup(key, comparator_);
+
+    page = buffer_pool_manager_->FetchPage(pageId);
+    node = reinterpret_cast<BPlusTreePage *>(page->GetData());
+    // 如果该节点安全，把它祖先的锁都释放了
+    if (Safe(node, op)) {
+      while (!q.empty()) {
+        auto *ancestor = q.back();
+        UnlockPage(ancestor, true);
+        buffer_pool_manager_->UnpinPage(ancestor->GetPageId(), false);
+      }
+    }
+    q.push(page);
+  }
+  return page;
+}
+
 /*
  * Find leaf page containing particular key, if leftMost flag == true, find
  * the left most leaf page
@@ -609,6 +698,7 @@ Page *BPLUSTREE_TYPE::FindLeafPage(const KeyType &key, bool leftMost) {
     throw Exception("Not Found Leaf Page");
     return nullptr;
   }
+  LockPage(page, false); // 先fetch,再获取锁
   auto *node = reinterpret_cast<BPlusTreePage *>(page->GetData());
   page_id_t pageId = root_page_id_;
 
@@ -620,7 +710,7 @@ Page *BPLUSTREE_TYPE::FindLeafPage(const KeyType &key, bool leftMost) {
     } else {
       pageId = internal_node->Lookup(key, comparator_);
     }
-
+    UnlockPage(page, false); // 先解锁,再Unpin
     buffer_pool_manager_->UnpinPage(pre_pageId, false);
     page = buffer_pool_manager_->FetchPage(pageId);
     if (page == nullptr) {
@@ -643,6 +733,7 @@ Page *BPLUSTREE_TYPE::FindLeafPage(const KeyType &key, bool leftMost) {
 INDEX_TEMPLATE_ARGUMENTS
 void BPLUSTREE_TYPE::UpdateRootPageId(int insert_record) {
   HeaderPage *header_page = static_cast<HeaderPage *>(buffer_pool_manager_->FetchPage(HEADER_PAGE_ID));
+  LockPage(header_page, true);
   if (insert_record != 0) {
     // create a new record<index_name + root_page_id> in header_page
     header_page->InsertRecord(index_name_, root_page_id_);
@@ -650,6 +741,7 @@ void BPLUSTREE_TYPE::UpdateRootPageId(int insert_record) {
     // update root_page_id in header_page
     header_page->UpdateRecord(index_name_, root_page_id_);
   }
+  UnlockPage(header_page, true);
   buffer_pool_manager_->UnpinPage(HEADER_PAGE_ID, true);
 }
 
