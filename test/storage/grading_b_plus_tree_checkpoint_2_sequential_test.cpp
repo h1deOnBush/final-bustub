@@ -120,10 +120,8 @@ TEST(BPlusTreeTests, InsertTest2) {
 
   int64_t start_key = 1;
   int64_t current_key = start_key;
-  std::cout << "\n";
   for (auto pair : tree) {
     auto location = pair.second;
-    std::cout << location << std::endl;
     EXPECT_EQ(location.GetPageId(), 0);
     EXPECT_EQ(location.GetSlotNum(), current_key);
     current_key = current_key + 1;
@@ -353,32 +351,25 @@ TEST(BPlusTreeTests, ScaleTest) {
     index_key.SetFromInteger(key);
     tree.Insert(index_key, rid, transaction);
   }
-
   std::vector<RID> rids;
   for (auto key : keys) {
     rids.clear();
     index_key.SetFromInteger(key);
     tree.GetValue(index_key, &rids);
     EXPECT_EQ(rids.size(), 1);
+
     int64_t value = key & 0xFFFFFFFF;
     EXPECT_EQ(rids[0].GetSlotNum(), value);
   }
 
   int64_t start_key = 1;
   int64_t current_key = start_key;
-  std::cout << "\n";
-
   for (auto pair : tree) {
     (void)pair;
-    std::cout << "\n" << current_key << "\n";
     current_key = current_key + 1;
-    if (current_key == 3557){
-      std::cout << "\n test \n";
-    }
   }
-  LOG_DEBUG("\nHAHA\n");
   EXPECT_EQ(current_key, keys.size() + 1);
-  LOG_DEBUG("\nHAHA\n");
+
   int64_t remove_scale = 9900;
   std::vector<int64_t> remove_keys;
   for (int64_t key = 1; key < remove_scale; key++) {
@@ -386,6 +377,9 @@ TEST(BPlusTreeTests, ScaleTest) {
   }
   // std::shuffle(remove_keys.begin(), remove_keys.end());
   for (auto key : remove_keys) {
+    if (key == 126) {
+      std::cout << key <<  std::endl;
+    }
     index_key.SetFromInteger(key);
     tree.Remove(index_key, transaction);
   }
@@ -394,8 +388,13 @@ TEST(BPlusTreeTests, ScaleTest) {
   current_key = start_key;
   int64_t size = 0;
   index_key.SetFromInteger(start_key);
+  std::vector<int> for_insert;
+  for(int i = 9900; i < 10000; i++) {
+    for_insert.push_back(i);
+  }
   for (auto pair : tree) {
     (void)pair;
+    EXPECT_EQ((pair.first).ToString(), for_insert[size]);
     current_key = current_key + 1;
     size = size + 1;
   }
@@ -440,14 +439,17 @@ TEST(BPlusTreeTests, SequentialMixTest) {
   // first, populate index
   std::vector<int64_t> for_insert;
   std::vector<int64_t> for_delete;
+  std::vector<int64_t> for_total;
   size_t sieve = 2;  // divide evenly
   size_t total_keys = 1000;
+
   for (size_t i = 1; i <= total_keys; i++) {
     if (i % sieve == 0) {
       for_insert.push_back(i);
     } else {
       for_delete.push_back(i);
     }
+    for_total.push_back(i);
   }
 
   // Insert all the keys, including the ones that will remain at the end and
@@ -463,13 +465,26 @@ TEST(BPlusTreeTests, SequentialMixTest) {
     int64_t delete_value = delete_key & 0xFFFFFFFF;
     rid.Set(static_cast<int32_t>(delete_key >> 32), delete_value);
     index_key.SetFromInteger(delete_key);
+
     tree.Insert(index_key, rid, transaction);
   }
+  int total_size = 0;
+  for (auto pair : tree) {
 
+    EXPECT_EQ((pair.first).ToString(), for_total[total_size]);
+    total_size++;
+  }
+  tree.Draw(bpm, "checktree.dot");
   // Remove the keys in for_delete
   for (auto key : for_delete) {
     index_key.SetFromInteger(key);
+
+    std::cout << "delete the key " << key << std::endl;
     tree.Remove(index_key, transaction);
+    if (key == 383) {
+      std::cout << "check the problem" << std::endl;
+      tree.Draw(bpm, "checkdelete3.dot");
+    }
   }
 
   // Only half of the keys should remain
@@ -477,6 +492,10 @@ TEST(BPlusTreeTests, SequentialMixTest) {
   int64_t size = 0;
   index_key.SetFromInteger(start_key);
   for (auto pair : tree) {
+    std::cout << "遍历 " << (pair.first).ToString() << std::endl;
+    if (for_insert[size] == 380) {
+      std::cout << "check the problem" << std::endl;
+    }
     EXPECT_EQ((pair.first).ToString(), for_insert[size]);
     size++;
   }

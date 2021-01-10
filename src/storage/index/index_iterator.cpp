@@ -33,6 +33,7 @@ const MappingType &INDEXITERATOR_TYPE::operator*() {
   auto *page = buffer_pool_manager_->FetchPage(pageId_);
   auto *leafnode = reinterpret_cast<B_PLUS_TREE_LEAF_PAGE_TYPE *>(page->GetData());
   const MappingType &item = leafnode->GetItem(index_);
+  std::cout << "index is " << index_ << " page id is " << pageId_ <<  " iterating get the key " << item.first << std::endl;
   buffer_pool_manager_->UnpinPage(page->GetPageId(), false);
   return item;
 }

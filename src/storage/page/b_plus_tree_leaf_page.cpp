@@ -34,7 +34,6 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::Init(page_id_t page_id, page_id_t parent_id, in
   SetParentPageId(parent_id);
   SetMaxSize(max_size);
   SetNextPageId(INVALID_PAGE_ID);
-  std::cout << "\ntree's maxpage is " << max_size << "pageid is" << page_id << std::endl;
 }
 
 /**
@@ -99,6 +98,7 @@ int B_PLUS_TREE_LEAF_PAGE_TYPE::Insert(const KeyType &key, const ValueType &valu
   for (int i = GetSize() - 1; i > index; --i) {
     array[i] = array[i - 1];
   }
+
   array[index] = {key, value};
 
   return GetSize();
@@ -162,14 +162,20 @@ INDEX_TEMPLATE_ARGUMENTS
 int B_PLUS_TREE_LEAF_PAGE_TYPE::RemoveAndDeleteRecord(const KeyType &key, const KeyComparator &comparator) {
   bool exist = false;
   int i = 0;
-  for (; i < GetSize(); ++i) {
+  int size = GetSize();
+  for (; i < size; ++i) {
+    if (GetPageId() == 5){
+      // std::cout << key << " / " <<array[i].first << std::endl;
+    }
     if (comparator(key, array[i].first) == 0) {
+
+      std::cout << "remove and delete the record"  << key << std::endl;
       exist = true;
       break;
     }
   }
   if (exist) {
-    for (int j = i + 1; j < GetSize(); ++j) {
+    for (int j = i + 1; j < size; ++j) {
       array[j - 1] = array[j];
     }
     IncreaseSize(-1);
@@ -189,6 +195,7 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::MoveAllTo(BPlusTreeLeafPage *recipient) {
   recipient->CopyNFrom(array, GetSize());
   IncreaseSize(-GetSize());
   recipient->SetNextPageId(GetNextPageId());
+  SetNextPageId(INVALID_PAGE_ID);
 }
 
 /*****************************************************************************
@@ -223,6 +230,7 @@ INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_LEAF_PAGE_TYPE::MoveLastToFrontOf(BPlusTreeLeafPage *recipient) {
   recipient->CopyFirstFrom(array[GetSize() - 1]);
   IncreaseSize(-1);
+
 }
 
 /*
@@ -231,8 +239,8 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::MoveLastToFrontOf(BPlusTreeLeafPage *recipient)
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_LEAF_PAGE_TYPE::CopyFirstFrom(const MappingType &item) {
   int size = GetSize();
-  for (int i = 0; i < size; ++i) {
-    array[i + 1] = array[i];
+  for (int i = size; i > 0; --i) {
+    array[i] = array[i - 1];
   }
   array[0] = item;
   IncreaseSize(1);

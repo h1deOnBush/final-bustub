@@ -66,9 +66,9 @@ class BPlusTree {
   void Draw(BufferPoolManager *bpm, const std::string &outf) {
     std::ofstream out(outf);
     out << "digraph G {" << std::endl;
-    LOG_DEBUG("problem1\n");
+    // LOG_DEBUG("problem1\n");
     ToGraph(reinterpret_cast<BPlusTreePage *>(bpm->FetchPage(root_page_id_)->GetData()), bpm, out);
-    LOG_DEBUG("problem2\n");
+    // LOG_DEBUG("problem2\n");
     out << "}" << std::endl;
     out.close();
   }
@@ -82,8 +82,6 @@ class BPlusTree {
   Page *FindLeafPage(const KeyType &key, bool leftMost = false);
 
  private:
-  template <typename N>
-  B_PLUS_TREE_LEAF_PAGE_TYPE *Search(const KeyType &key);
 
   void StartNewTree(const KeyType &key, const ValueType &value);
 
@@ -96,7 +94,7 @@ class BPlusTree {
   N *Split(N *node);
 
   template <typename N>
-  bool CoalesceOrRedistribute(N *node, Transaction *transaction = nullptr);
+  bool CoalesceOrRedistribute(N *&node, Transaction *transaction = nullptr);
 
   template <typename N>
   bool Coalesce(N *neighbor_node, N *node, BPlusTreeInternalPage<KeyType, page_id_t, KeyComparator> *parent, int index,
@@ -108,6 +106,10 @@ class BPlusTree {
   bool AdjustRoot(BPlusTreePage *node);
 
   void UpdateRootPageId(int insert_record = 0);
+
+  /* helper function for find subling in split */
+  template <typename N>
+  int findSibling(N *node, BPlusTreeInternalPage<KeyType, page_id_t, KeyComparator> *parent);
 
   /* Debug Routines for FREE!! */
   void ToGraph(BPlusTreePage *page, BufferPoolManager *bpm, std::ofstream &out) const;
