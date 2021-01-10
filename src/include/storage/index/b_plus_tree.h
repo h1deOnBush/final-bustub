@@ -117,7 +117,7 @@ class BPlusTree {
   template<typename N>
   bool Safe(N *node, int op);
 
-  Page* Search(const KeyType &key, int op);
+  Page* Search(const KeyType &key, int op, Transaction *transaction);
 
   void LockPage(Page* page, bool enable); // enable == true means WLatch,  enable == false means RLatch
 
