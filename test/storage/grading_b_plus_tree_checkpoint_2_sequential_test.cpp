@@ -474,17 +474,11 @@ TEST(BPlusTreeTests, SequentialMixTest) {
     EXPECT_EQ((pair.first).ToString(), for_total[total_size]);
     total_size++;
   }
-  tree.Draw(bpm, "checktree.dot");
+
   // Remove the keys in for_delete
   for (auto key : for_delete) {
     index_key.SetFromInteger(key);
-
-    std::cout << "delete the key " << key << std::endl;
     tree.Remove(index_key, transaction);
-    if (key == 383) {
-      std::cout << "check the problem" << std::endl;
-      tree.Draw(bpm, "checkdelete3.dot");
-    }
   }
 
   // Only half of the keys should remain
@@ -492,10 +486,6 @@ TEST(BPlusTreeTests, SequentialMixTest) {
   int64_t size = 0;
   index_key.SetFromInteger(start_key);
   for (auto pair : tree) {
-    std::cout << "遍历 " << (pair.first).ToString() << std::endl;
-    if (for_insert[size] == 380) {
-      std::cout << "check the problem" << std::endl;
-    }
     EXPECT_EQ((pair.first).ToString(), for_insert[size]);
     size++;
   }

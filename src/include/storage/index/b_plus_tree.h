@@ -91,7 +91,7 @@ class BPlusTree {
                         Transaction *transaction = nullptr);
 
   template <typename N>
-  N *Split(N *node);
+  N *Split(N *node, Transaction *transaction);
 
   template <typename N>
   bool CoalesceOrRedistribute(N *&node, Transaction *transaction = nullptr);
@@ -113,7 +113,7 @@ class BPlusTree {
 
   /* helper function for latch crabbing below */
 
-  /* op = 1 means insert; op = 0 means delete */
+  /* op == 1 means insert; op == 2 means delete */
   template<typename N>
   bool Safe(N *node, int op);
 
@@ -123,11 +123,17 @@ class BPlusTree {
 
   void UnlockPage(Page* page, bool enable);
 
+  /* op == 0 means search ;op == 1 means insert; op == 2 means delete */
+  // void FetchPage(Page *page, int op, Transaction *transaction); //
+
+  void FreeAllPageInTransaction(Transaction *transaction, int op);
   /* Debug Routines for FREE!! */
   void ToGraph(BPlusTreePage *page, BufferPoolManager *bpm, std::ofstream &out) const;
 
   void ToString(BPlusTreePage *page, BufferPoolManager *bpm) const;
 
+  void LockRoot(bool exclusive);
+  void UnlockRoot(bool exclusive);
   // member variable
   std::string index_name_;
   page_id_t root_page_id_;
@@ -135,6 +141,9 @@ class BPlusTree {
   KeyComparator comparator_;
   int leaf_max_size_;
   int internal_max_size_;
+
+  // adds a mutex protect the root_page_id
+  ReaderWriterLatch mutex;
 };
 
 }  // namespace bustub

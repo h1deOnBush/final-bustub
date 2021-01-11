@@ -33,7 +33,7 @@ const MappingType &INDEXITERATOR_TYPE::operator*() {
   auto *page = buffer_pool_manager_->FetchPage(pageId_);
   auto *leafnode = reinterpret_cast<B_PLUS_TREE_LEAF_PAGE_TYPE *>(page->GetData());
   const MappingType &item = leafnode->GetItem(index_);
-  std::cout << "index is " << index_ << " page id is " << pageId_ <<  " iterating get the key " << item.first << std::endl;
+  // std::cout << "index is " << index_ << " page id is " << pageId_ <<  " iterating get the key " << item.first << std::endl;
   buffer_pool_manager_->UnpinPage(page->GetPageId(), false);
   return item;
 }
@@ -50,12 +50,15 @@ INDEXITERATOR_TYPE &INDEXITERATOR_TYPE::operator++() {
     auto *page = buffer_pool_manager_->FetchPage(pageId_);
     auto *leafnode = reinterpret_cast<B_PLUS_TREE_LEAF_PAGE_TYPE *>(page->GetData());
     auto next_pageId = leafnode->GetNextPageId();
+    page->RUnlatch();
     buffer_pool_manager_->UnpinPage(pageId_, false);
-    pageId_ =  next_pageId;
+    // buffer_pool_manager_->UnpinPage(pageId_, false);
+    pageId_ = next_pageId;
     if (pageId_ == INVALID_PAGE_ID) {
       is_end_ = true;
     } else {
-      auto *newpage =buffer_pool_manager_->FetchPage(pageId_);
+      auto *newpage = buffer_pool_manager_->FetchPage(pageId_);
+      newpage->RLatch();
       auto new_leafnode = reinterpret_cast<B_PLUS_TREE_LEAF_PAGE_TYPE *>(newpage->GetData());
       size_ = new_leafnode->GetSize();
       buffer_pool_manager_->UnpinPage(newpage->GetPageId(), false);

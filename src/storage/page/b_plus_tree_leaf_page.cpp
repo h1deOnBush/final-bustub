@@ -100,7 +100,7 @@ int B_PLUS_TREE_LEAF_PAGE_TYPE::Insert(const KeyType &key, const ValueType &valu
   }
 
   array[index] = {key, value};
-
+  std::cout << "insert the key " << key << std::endl;
   return GetSize();
 }
 
@@ -115,8 +115,8 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::MoveHalfTo(BPlusTreeLeafPage *recipient, Buffer
   int old_size = GetSize();
   int mid_point = (old_size + 1) / 2;
   recipient->CopyNFrom(&array[mid_point], old_size / 2);
-  recipient->SetNextPageId(GetPageId());
   SetSize((old_size + 1) / 2);
+  // setNextPageId放哪里再考虑下
 }
 
 /*
@@ -144,6 +144,7 @@ bool B_PLUS_TREE_LEAF_PAGE_TYPE::Lookup(const KeyType &key, ValueType *value, co
   for (int i = 0; i < GetSize(); ++i) {
     if (comparator(key, array[i].first) == 0) {
       *value = array[i].second;
+      // std::cout << "found the value " << *value << std::endl;
       return true;
     }
   }
