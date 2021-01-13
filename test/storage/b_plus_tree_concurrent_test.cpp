@@ -198,7 +198,7 @@ TEST(BPlusTreeConcurrentTest, InsertTest2) {
   remove("test.log");
 }
 
-TEST(BPlusTreeConcurrentTest, DISABLED_DeleteTest1) {
+TEST(BPlusTreeConcurrentTest, DeleteTest1) {
   // create KeyComparator and index schema
   Schema *key_schema = ParseCreateStatement("a bigint");
   GenericComparator<8> comparator(key_schema);
@@ -241,7 +241,7 @@ TEST(BPlusTreeConcurrentTest, DISABLED_DeleteTest1) {
   remove("test.log");
 }
 
-TEST(BPlusTreeConcurrentTest, DISABLED_DeleteTest2) {
+TEST(BPlusTreeConcurrentTest, DeleteTest2) {
   // create KeyComparator and index schema
   Schema *key_schema = ParseCreateStatement("a bigint");
   GenericComparator<8> comparator(key_schema);
@@ -285,7 +285,7 @@ TEST(BPlusTreeConcurrentTest, DISABLED_DeleteTest2) {
   remove("test.log");
 }
 
-TEST(BPlusTreeConcurrentTest, DISABLED_MixTest) {
+TEST(BPlusTreeConcurrentTest, MixTest) {
   // create KeyComparator and index schema
   Schema *key_schema = ParseCreateStatement("a bigint");
   GenericComparator<8> comparator(key_schema);

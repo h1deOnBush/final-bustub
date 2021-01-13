@@ -64,12 +64,11 @@ TEST(BPlusTreeTests, DeleteTest1) {
   EXPECT_EQ(current_key, keys.size() + 1);
 
   std::vector<int64_t> remove_keys = {5, 1};
-  LOG_DEBUG("Haha\n");
+
   for (auto key : remove_keys) {
     LOG_DEBUG("delete key is %ld\n", key);
     index_key.SetFromInteger(key);
     tree.Remove(index_key, transaction);
-
   }
   start_key = 2;
   current_key = start_key;

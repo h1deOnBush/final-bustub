@@ -182,7 +182,7 @@ void InsertTest1Call() {
 }
 
 void InsertTest2Call() {
-  for (size_t iter = 0; iter < NUM_ITERS - NUM_ITERS + 1; iter++) {
+  for (size_t iter = 0; iter < NUM_ITERS; iter++) {
     // create KeyComparator and index schema
     Schema *key_schema = ParseCreateStatement("a bigint");
     GenericComparator<8> comparator(key_schema);
@@ -356,7 +356,6 @@ void MixTest1Call() {
     }
     // Insert all the keys to delete
     InsertHelper(&tree, for_delete, 1);
-
     auto insert_task = [&](int tid) { InsertHelper(&tree, for_insert, tid); };
     auto delete_task = [&](int tid) { DeleteHelper(&tree, for_delete, tid); };
     std::vector<std::function<void(int)>> tasks;
@@ -523,7 +522,7 @@ void MixTest3Call() {
  * Score: 5
  * Description: Concurrently insert a set of keys.
  */
-TEST(BPlusTreeConcurrentTest, GInsertTest1) {
+TEST(BPlusTreeConcurrentTest, DISABLED_GInsertTest1) {
   TEST_TIMEOUT_BEGIN
   InsertTest1Call();
   remove("test.db");
@@ -536,7 +535,7 @@ TEST(BPlusTreeConcurrentTest, GInsertTest1) {
  * Description: Split the concurrent insert test to multiple threads
  * without overlap.
  */
-TEST(BPlusTreeConcurrentTest, GInsertTest2) {
+TEST(BPlusTreeConcurrentTest, DISABLED_GInsertTest2) {
   TEST_TIMEOUT_BEGIN
   InsertTest2Call();
   remove("test.db");
@@ -548,7 +547,7 @@ TEST(BPlusTreeConcurrentTest, GInsertTest2) {
  * Score: 5
  * Description: Concurrently delete a set of keys.
  */
-TEST(BPlusTreeConcurrentTest, DISABLED_DeleteTest1) {
+TEST(BPlusTreeConcurrentTest, DISABLED_GDeleteTest1) {
   TEST_TIMEOUT_BEGIN
   DeleteTest1Call();
   remove("test.db");
@@ -561,7 +560,7 @@ TEST(BPlusTreeConcurrentTest, DISABLED_DeleteTest1) {
  * Description: Split the concurrent delete task to multiple threads
  * without overlap.
  */
-TEST(BPlusTreeConcurrentTest, DISABLED_DeleteTest2) {
+TEST(BPlusTreeConcurrentTest, DISABLED_GDeleteTest2) {
   TEST_TIMEOUT_BEGIN
   DeleteTest2Call();
   remove("test.db");
@@ -576,7 +575,7 @@ TEST(BPlusTreeConcurrentTest, DISABLED_DeleteTest2) {
  * insert different set of keys. Check if all old keys are
  * deleted and new keys are added correctly.
  */
-TEST(BPlusTreeConcurrentTest, DISABLED_MixTest1) {
+TEST(BPlusTreeConcurrentTest, GMixTest1) {
   TEST_TIMEOUT_BEGIN
   MixTest1Call();
   remove("test.db");
@@ -607,7 +606,7 @@ TEST(BPlusTreeConcurrentTest, DISABLED_MixTest2) {
  * insert different set of keys. Check if all old keys are
  * deleted and new keys are added correctly.
  */
-TEST(BPlusTreeConcurrentTest, DISABLED_MixTest3) {
+TEST(BPlusTreeConcurrentTest, DISABLED_GMixTest3) {
   TEST_TIMEOUT_BEGIN
   MixTest3Call();
   remove("test.db");

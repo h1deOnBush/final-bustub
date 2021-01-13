@@ -71,6 +71,7 @@ class BufferPoolManager {
   Page *NewPage(page_id_t *page_id, bufferpool_callback_fn callback = nullptr) {
     GradingCallback(callback, CallbackType::BEFORE, INVALID_PAGE_ID);
     auto *result = NewPageImpl(page_id);
+    std::cout << "New page id is " << *page_id << std::endl;
     GradingCallback(callback, CallbackType::AFTER, *page_id);
     return result;
   }

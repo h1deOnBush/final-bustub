@@ -119,9 +119,9 @@ class BPlusTree {
 
   Page* Search(const KeyType &key, int op, Transaction *transaction);
 
-  void LockPage(Page* page, bool enable); // enable == true means WLatch,  enable == false means RLatch
+  void LockPage(Page* page, bool enable, int op = 0); // enable == true means WLatch,  enable == false means RLatch
 
-  void UnlockPage(Page* page, bool enable);
+  void UnlockPage(Page* page, bool enable, int op = 0);
 
   /* op == 0 means search ;op == 1 means insert; op == 2 means delete */
   // void FetchPage(Page *page, int op, Transaction *transaction); //
@@ -132,8 +132,8 @@ class BPlusTree {
 
   void ToString(BPlusTreePage *page, BufferPoolManager *bpm) const;
 
-  void LockRoot(bool exclusive);
-  void UnlockRoot(bool exclusive);
+  void LockRoot(bool exclusive, int op = 0);
+  void UnlockRoot(bool exclusive, int op = 0);
   // member variable
   std::string index_name_;
   page_id_t root_page_id_;

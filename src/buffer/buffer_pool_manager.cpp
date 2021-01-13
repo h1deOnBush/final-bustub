@@ -104,6 +104,7 @@ bool BufferPoolManager::UnpinPageImpl(page_id_t page_id, bool is_dirty) {
   }
   frame_id_t frameId = it->second;
   auto &page = pages_[frameId];
+  std::cout << "Unpin the page " << page_id << std::endl;
   BUSTUB_ASSERT(page.pin_count_ > 0, "the page being unpinning should be pinned before");
   if (page.pin_count_ <= 0) {
     return false;
@@ -189,21 +190,24 @@ bool BufferPoolManager::DeletePageImpl(page_id_t page_id) {
   if (page_id == INVALID_PAGE_ID) {
     return false;
   }
+
   disk_manager_->DeallocatePage(page_id);
   auto it = page_table_.find(page_id);
   if (it == page_table_.end()) {
     return true;
   }
   auto frameId = it->second;
+
   auto &page = pages_[frameId];
   if (page.pin_count_ != 0) {
     return false;
   }
-  // replacer_->Pin(frameId);
+  replacer_->Pin(frameId);
   // page.pin_count_ = 0;
   free_list_.push_back(frameId);
   page_table_.erase(page_id);
-  page.page_id_ = INVALID_PAGE_ID;
+  // page.page_id_ = INVALID_PAGE_ID;
+
   page.is_dirty_ = false;
   page.ResetMemory();
 

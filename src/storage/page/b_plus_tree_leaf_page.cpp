@@ -98,9 +98,9 @@ int B_PLUS_TREE_LEAF_PAGE_TYPE::Insert(const KeyType &key, const ValueType &valu
   for (int i = GetSize() - 1; i > index; --i) {
     array[i] = array[i - 1];
   }
-
+  BUSTUB_ASSERT(index >= 0, "Insert failure!!!!!!");
   array[index] = {key, value};
-  std::cout << "insert the key " << key << std::endl;
+  std::cout << "insert the key " << key << "value is" << value << "at the index of " << index <<std::endl;
   return GetSize();
 }
 

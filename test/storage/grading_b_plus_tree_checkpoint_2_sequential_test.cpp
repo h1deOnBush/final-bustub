@@ -17,7 +17,7 @@ namespace bustub {
  * Description: The same test that has been run for checkpoint 1,
  * but added iterator for value checking
  */
-TEST(BPlusTreeTests, InsertTest1) {
+TEST(BPlusTreeTests, DISABLED_InsertTest1) {
   // create KeyComparator and index schema
   Schema *key_schema = ParseCreateStatement("a bigint");
   GenericComparator<8> comparator(key_schema);
@@ -80,7 +80,7 @@ TEST(BPlusTreeTests, InsertTest1) {
  * Description: The same test that has been run for checkpoint 1
  * but added iterator for value checking
  */
-TEST(BPlusTreeTests, InsertTest2) {
+TEST(BPlusTreeTests, DISABLED_InsertTest2) {
   // create KeyComparator and index schema
   Schema *key_schema = ParseCreateStatement("a bigint");
   GenericComparator<8> comparator(key_schema);
@@ -154,7 +154,7 @@ TEST(BPlusTreeTests, InsertTest2) {
  * check the the inserted keys. Then delete a subset of the keys.
  * Finally use the iterator to check the remained keys.
  */
-TEST(BPlusTreeTests, DeleteTest1) {
+TEST(BPlusTreeTests, DISABLED_DeleteTest1) {
   // create KeyComparator and index schema
   std::string createStmt = "a bigint";
   Schema *key_schema = ParseCreateStatement(createStmt);
@@ -237,7 +237,7 @@ TEST(BPlusTreeTests, DeleteTest1) {
  * Description: Similar to DeleteTest2, except that, during the Remove step,
  * a different subset of keys are removed.
  */
-TEST(BPlusTreeTests, DeleteTest2) {
+TEST(BPlusTreeTests, DISABLED_DeleteTest2) {
   // create KeyComparator and index schema
   Schema *key_schema = ParseCreateStatement("a bigint");
   GenericComparator<8> comparator(key_schema);
@@ -321,7 +321,7 @@ TEST(BPlusTreeTests, DeleteTest2) {
  * through the inserted keys. Then remove 9900 inserted keys. Finally, use
  * the iterator to check the correctness of the remaining keys.
  */
-TEST(BPlusTreeTests, ScaleTest) {
+TEST(BPlusTreeTests, DISABLED_ScaleTest) {
   // create KeyComparator and index schema
   Schema *key_schema = ParseCreateStatement("a bigint");
   GenericComparator<8> comparator(key_schema);
@@ -351,6 +351,7 @@ TEST(BPlusTreeTests, ScaleTest) {
     index_key.SetFromInteger(key);
     tree.Insert(index_key, rid, transaction);
   }
+
   std::vector<RID> rids;
   for (auto key : keys) {
     rids.clear();
@@ -377,11 +378,11 @@ TEST(BPlusTreeTests, ScaleTest) {
   }
   // std::shuffle(remove_keys.begin(), remove_keys.end());
   for (auto key : remove_keys) {
-    if (key == 126) {
-      std::cout << key <<  std::endl;
-    }
     index_key.SetFromInteger(key);
     tree.Remove(index_key, transaction);
+    if (key == 9744) {
+      tree.Draw(bpm, "haha.dot");
+    }
   }
 
   start_key = 9900;
