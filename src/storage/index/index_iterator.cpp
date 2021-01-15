@@ -50,13 +50,14 @@ INDEXITERATOR_TYPE &INDEXITERATOR_TYPE::operator++() {
     auto *page = buffer_pool_manager_->FetchPage(pageId_);
     auto *leafnode = reinterpret_cast<B_PLUS_TREE_LEAF_PAGE_TYPE *>(page->GetData());
     auto next_pageId = leafnode->GetNextPageId();
+    if (next_pageId == INVALID_PAGE_ID) {
+      is_end_ = true;
+    }
     page->RUnlatch();
     buffer_pool_manager_->UnpinPage(pageId_, false);
     // buffer_pool_manager_->UnpinPage(pageId_, false);
     pageId_ = next_pageId;
-    if (pageId_ == INVALID_PAGE_ID) {
-      is_end_ = true;
-    } else {
+    if (!is_end_) {
       auto *newpage = buffer_pool_manager_->FetchPage(pageId_);
       newpage->RLatch();
       auto new_leafnode = reinterpret_cast<B_PLUS_TREE_LEAF_PAGE_TYPE *>(newpage->GetData());

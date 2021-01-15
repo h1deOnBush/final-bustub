@@ -43,6 +43,7 @@ TEST(BPlusTreeTests, SplitTest) {
     rid.Set(static_cast<int32_t>(key >> 32), value);
     index_key.SetFromInteger(key);
     tree.Insert(index_key, rid, transaction);
+    tree.Draw(bpm, "haha.dot");
   }
   // insert into repetitive key, all failed
   for (auto key : keys) {

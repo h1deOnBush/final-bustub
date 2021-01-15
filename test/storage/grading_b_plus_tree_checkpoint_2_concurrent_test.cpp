@@ -116,9 +116,31 @@ void LookupHelper(BPlusTree<GenericKey<8>, RID, GenericComparator<8>> *tree, con
     index_key.SetFromInteger(key);
     std::vector<RID> result;
     bool res = tree->GetValue(index_key, &result, transaction);
+    if (res) {
+      std::cout << "thread id " << transaction->GetThreadId() << "LookupHelper found the key " << key << std::endl;
+    }
+    else {
+      std::cout << "thread id " << transaction->GetThreadId() << "LookupHelper didn't find the key " << key << std::endl;
+    }
+    std::cout << "just for test1, its thread is is " << transaction->GetThreadId()
+              << "wants to find the key " << value
+              << "rid's value is " << rid << std::endl;
     EXPECT_EQ(res, true);
+    std::cout << "just for test2, its thread is is " << transaction->GetThreadId()
+              << "wants to find the key " << value
+              << "rid's value is " << rid << std::endl;
+    if (result.size() == 0) {
+      std::cout << "the result's size is 0 when inserting the value " << value
+                << "its thread id is" << transaction->GetThreadId() << std::endl;
+    }
     EXPECT_EQ(result.size(), 1);
+    std::cout << "just for test3, its thread is is " << transaction->GetThreadId()
+              << "wants to find the key " << value
+              << "rid's value is " << rid << std::endl;
     EXPECT_EQ(result[0], rid);
+    std::cout << "just for test4, its thread is is " << transaction->GetThreadId()
+              << "wants to find the key " << value
+              << "rid's value is " << rid << std::endl;
   }
   delete transaction;
 }
@@ -416,6 +438,7 @@ void MixTest2Call() {
       }
     }
     InsertHelper(&tree, perserved_keys, 1);
+    tree.Draw(bpm, "mixtest2.dot");
     // Check there are 1000 keys in there
     size_t size;
 
@@ -522,7 +545,7 @@ void MixTest3Call() {
  * Score: 5
  * Description: Concurrently insert a set of keys.
  */
-TEST(BPlusTreeConcurrentTest, DISABLED_GInsertTest1) {
+TEST(BPlusTreeConcurrentTest, GInsertTest1) {
   TEST_TIMEOUT_BEGIN
   InsertTest1Call();
   remove("test.db");
@@ -535,7 +558,7 @@ TEST(BPlusTreeConcurrentTest, DISABLED_GInsertTest1) {
  * Description: Split the concurrent insert test to multiple threads
  * without overlap.
  */
-TEST(BPlusTreeConcurrentTest, DISABLED_GInsertTest2) {
+TEST(BPlusTreeConcurrentTest, GInsertTest2) {
   TEST_TIMEOUT_BEGIN
   InsertTest2Call();
   remove("test.db");
@@ -547,7 +570,7 @@ TEST(BPlusTreeConcurrentTest, DISABLED_GInsertTest2) {
  * Score: 5
  * Description: Concurrently delete a set of keys.
  */
-TEST(BPlusTreeConcurrentTest, DISABLED_GDeleteTest1) {
+TEST(BPlusTreeConcurrentTest, GDeleteTest1) {
   TEST_TIMEOUT_BEGIN
   DeleteTest1Call();
   remove("test.db");
@@ -560,7 +583,7 @@ TEST(BPlusTreeConcurrentTest, DISABLED_GDeleteTest1) {
  * Description: Split the concurrent delete task to multiple threads
  * without overlap.
  */
-TEST(BPlusTreeConcurrentTest, DISABLED_GDeleteTest2) {
+TEST(BPlusTreeConcurrentTest, GDeleteTest2) {
   TEST_TIMEOUT_BEGIN
   DeleteTest2Call();
   remove("test.db");
@@ -591,7 +614,7 @@ TEST(BPlusTreeConcurrentTest, GMixTest1) {
  * Check all the keys get are the same set of keys as previously
  * inserted.
  */
-TEST(BPlusTreeConcurrentTest, DISABLED_MixTest2) {
+TEST(BPlusTreeConcurrentTest, GMixTest2) {
   TEST_TIMEOUT_BEGIN
   MixTest2Call();
   remove("test.db");
@@ -606,7 +629,7 @@ TEST(BPlusTreeConcurrentTest, DISABLED_MixTest2) {
  * insert different set of keys. Check if all old keys are
  * deleted and new keys are added correctly.
  */
-TEST(BPlusTreeConcurrentTest, DISABLED_GMixTest3) {
+TEST(BPlusTreeConcurrentTest, GMixTest3) {
   TEST_TIMEOUT_BEGIN
   MixTest3Call();
   remove("test.db");

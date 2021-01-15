@@ -88,7 +88,16 @@ ValueType B_PLUS_TREE_INTERNAL_PAGE_TYPE::ValueAt(int index) const {
 INDEX_TEMPLATE_ARGUMENTS
 ValueType B_PLUS_TREE_INTERNAL_PAGE_TYPE::Lookup(const KeyType &key, const KeyComparator &comparator) const {
   for (int i = 1; i < GetSize(); ++i) {
+
     if (comparator(key, array[i].first) < 0) {
+      std::cout << "want to find a value "<< key << " in the internal node and found that the i is" << i
+                << "and the key is " << array[i].first
+                << "and the internal page's size is" << GetSize() << std::endl;
+      for (int j = 0; j < GetSize(); ++j) {
+        std::cout << "want to find a value " << key <<  " in the internal node and found that the afteri is" << j
+                  << "and the key is " << array[j].first
+                  << "and the internal page's size is" << GetSize() << std::endl;
+      }
       return array[i - 1].second;
     }
   }

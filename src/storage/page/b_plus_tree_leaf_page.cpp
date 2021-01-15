@@ -117,6 +117,8 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::MoveHalfTo(BPlusTreeLeafPage *recipient, Buffer
   recipient->CopyNFrom(&array[mid_point], old_size / 2);
   SetSize((old_size + 1) / 2);
   // setNextPageId放哪里再考虑下
+  recipient->SetNextPageId(GetNextPageId());
+  SetNextPageId(recipient->GetPageId());
 }
 
 /*
@@ -133,7 +135,7 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::CopyNFrom(MappingType *items, int size) {
 
 /*****************************************************************************
  * LOOKUP
- *****************************************************************************/
+ **************************************************************************/
 /*
  * For the given key, check to see whether it exists in the leaf page. If it
  * does, then store its corresponding value in input "value" and return true.
@@ -141,13 +143,20 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::CopyNFrom(MappingType *items, int size) {
  */
 INDEX_TEMPLATE_ARGUMENTS
 bool B_PLUS_TREE_LEAF_PAGE_TYPE::Lookup(const KeyType &key, ValueType *value, const KeyComparator &comparator) const {
-  for (int i = 0; i < GetSize(); ++i) {
+  int i;
+  for (i = 0; i < GetSize(); ++i) {
     if (comparator(key, array[i].first) == 0) {
       *value = array[i].second;
-      // std::cout << "found the value " << *value << std::endl;
+      std::cout << "found the key's value, whose key is " << key
+                << "his page id is " << GetPageId()
+                << "and his index is "<< i <<std::endl;
       return true;
     }
   }
+  std::cout << "it cannot find the key whose key is " << key << " the page's size is " << GetSize()
+            << " its page id is " << GetPageId() << " the i is " << i
+            << "the array[i].first is " << array[i-1].first
+            << " ,the array[i].second is " << array[i-1].second << std::endl;
   return false;
 }
 

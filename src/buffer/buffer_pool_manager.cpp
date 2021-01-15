@@ -104,7 +104,6 @@ bool BufferPoolManager::UnpinPageImpl(page_id_t page_id, bool is_dirty) {
   }
   frame_id_t frameId = it->second;
   auto &page = pages_[frameId];
-  std::cout << "Unpin the page " << page_id << std::endl;
   BUSTUB_ASSERT(page.pin_count_ > 0, "the page being unpinning should be pinned before");
   if (page.pin_count_ <= 0) {
     return false;

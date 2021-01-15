@@ -20,7 +20,8 @@
 #include "storage/page/b_plus_tree_leaf_page.h"
 
 namespace bustub {
-
+// minsize < internal node <= maxsize
+// minsize <= leaf node    < maxsize
 #define BPLUSTREE_TYPE BPlusTree<KeyType, ValueType, KeyComparator>
 
 /**
@@ -79,7 +80,7 @@ class BPlusTree {
   // read data from file and remove one by one
   void RemoveFromFile(const std::string &file_name, Transaction *transaction = nullptr);
   // expose for test purpose
-  Page *FindLeafPage(const KeyType &key, bool leftMost = false); // 读锁
+  Page *FindLeafPage(const KeyType &key, bool leftMost = false, Transaction *transaction = nullptr); // 读锁
 
  private:
 
@@ -111,8 +112,10 @@ class BPlusTree {
   template <typename N>
   int findSibling(N *node, BPlusTreeInternalPage<KeyType, page_id_t, KeyComparator> *parent);
 
-  /* helper function for latch crabbing below */
 
+  /* helper function for latch crabbing below */
+  template <typename N>
+  bool coalesceOrNot(N *node, N *sibling);
   /* op == 1 means insert; op == 2 means delete */
   template<typename N>
   bool Safe(N *node, int op);
@@ -134,6 +137,9 @@ class BPlusTree {
 
   void LockRoot(bool exclusive, int op = 0);
   void UnlockRoot(bool exclusive, int op = 0);
+
+  // void addIntoTransactionPageSet(Page *page, Transaction *transaction);
+
   // member variable
   std::string index_name_;
   page_id_t root_page_id_;
