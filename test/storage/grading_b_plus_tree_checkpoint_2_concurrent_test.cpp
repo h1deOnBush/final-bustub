@@ -70,7 +70,6 @@ void InsertHelperSplit(BPlusTree<GenericKey<8>, RID, GenericComparator<8>> *tree
       rid.Set(static_cast<int32_t>(key >> 32), value);
       index_key.SetFromInteger(key);
       tree->Insert(index_key, rid, transaction);
-
     }
   }
   delete transaction;
@@ -116,31 +115,32 @@ void LookupHelper(BPlusTree<GenericKey<8>, RID, GenericComparator<8>> *tree, con
     index_key.SetFromInteger(key);
     std::vector<RID> result;
     bool res = tree->GetValue(index_key, &result, transaction);
-    if (res) {
-      std::cout << "thread id " << transaction->GetThreadId() << "LookupHelper found the key " << key << std::endl;
-    }
-    else {
-      std::cout << "thread id " << transaction->GetThreadId() << "LookupHelper didn't find the key " << key << std::endl;
-    }
-    std::cout << "just for test1, its thread is is " << transaction->GetThreadId()
-              << "wants to find the key " << value
-              << "rid's value is " << rid << std::endl;
+    // if (res) {
+    //   std::cout << "thread id " << transaction->GetThreadId() << "LookupHelper found the key "
+    //             << key << std::endl;
+    // } else {
+    //   std::cout << "thread id " << transaction->GetThreadId() << "LookupHelper didn't find the key " << key
+    //            << std::endl;
+    // }
+    // std::cout << "just for test1, its thread is is " << transaction->GetThreadId()
+    //         << "wants to find the key " << value
+    //         << "rid's value is " << rid << std::endl;
     EXPECT_EQ(res, true);
-    std::cout << "just for test2, its thread is is " << transaction->GetThreadId()
-              << "wants to find the key " << value
-              << "rid's value is " << rid << std::endl;
-    if (result.size() == 0) {
-      std::cout << "the result's size is 0 when inserting the value " << value
-                << "its thread id is" << transaction->GetThreadId() << std::endl;
-    }
+    // std::cout << "just for test2, its thread is is " << transaction->GetThreadId()
+    //           << "wants to find the key " << value
+    //           << "rid's value is " << rid << std::endl;
+    // if (result.empty()) {
+    //  std::cout << "the result's size is 0 when inserting the value " << value << "its thread id is"
+    //            << transaction->GetThreadId() << std::endl;
+    // }
     EXPECT_EQ(result.size(), 1);
-    std::cout << "just for test3, its thread is is " << transaction->GetThreadId()
-              << "wants to find the key " << value
-              << "rid's value is " << rid << std::endl;
+    // std::cout << "just for test3, its thread is is " << transaction->GetThreadId()
+    //           << "wants to find the key " << value
+    //           << "rid's value is " << rid << std::endl;
     EXPECT_EQ(result[0], rid);
-    std::cout << "just for test4, its thread is is " << transaction->GetThreadId()
-              << "wants to find the key " << value
-              << "rid's value is " << rid << std::endl;
+    // std::cout << "just for test4, its thread is is " << transaction->GetThreadId()
+    //          << "wants to find the key " << value
+    //          << "rid's value is " << rid << std::endl;
   }
   delete transaction;
 }
@@ -149,7 +149,7 @@ const size_t NUM_ITERS = 100;
 
 void InsertTest1Call() {
   for (size_t iter = 0; iter < NUM_ITERS; iter++) {
-    std::cout << "iteration " << iter <<  " may have a problem" << std::endl;
+    // std::cout << "iteration " << iter << " may have a problem" << std::endl;
     // create KeyComparator and index schema
     Schema *key_schema = ParseCreateStatement("a bigint");
     GenericComparator<8> comparator(key_schema);
@@ -242,7 +242,7 @@ void InsertTest2Call() {
     int64_t current_key = start_key;
 
     for (auto &pair : tree) {
-      std::cout << pair.second << std::endl;
+      // std::cout << pair.second << std::endl;
       auto location = pair.second;
       EXPECT_EQ(location.GetPageId(), 0);
       EXPECT_EQ(location.GetSlotNum(), current_key);
@@ -438,7 +438,7 @@ void MixTest2Call() {
       }
     }
     InsertHelper(&tree, perserved_keys, 1);
-    tree.Draw(bpm, "mixtest2.dot");
+    // tree.Draw(bpm, "mixtest2.dot");
     // Check there are 1000 keys in there
     size_t size;
 

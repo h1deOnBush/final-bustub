@@ -66,15 +66,14 @@ TEST(BufferPoolManagerTest, BinaryDataTest) {
 
   // Scenario: After unpinning pages {0, 1, 2, 3, 4} and pinning another 4 new pages,
   // there would still be one cache frame left for reading page 0.
-  for (int i = 0; i < (int)buffer_pool_size; ++i) {
+  for (int i = 0; i < 5; ++i) {
     EXPECT_EQ(true, bpm->UnpinPage(i, true));
     bpm->FlushPage(i);
   }
   // for (int i = 0; i < 4; ++i) {
-  for (int i = 0; i < (int)buffer_pool_size - 1; ++i) {
+  for (int i = 0; i < 4; ++i) {
     EXPECT_NE(nullptr, bpm->NewPage(&page_id_temp));
     bpm->UnpinPage(page_id_temp, false);
-    std::cout << page_id_temp << std::endl;
   }
   // Scenario: We should be able to fetch the data we wrote a while ago.
 

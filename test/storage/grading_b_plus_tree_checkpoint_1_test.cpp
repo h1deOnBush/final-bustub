@@ -214,7 +214,7 @@ TEST(BPlusTreeTests, ScaleTest1) {
   }
 
   // randomized the insertion order
-//  auto rng = std::default_random_engine{};
+  //  auto rng = std::default_random_engine{};
   // std::shuffle(keys.begin(), keys.end(), rng);
   for (auto key : keys) {
     int64_t value = key & 0xFFFFFFFF;
@@ -232,7 +232,6 @@ TEST(BPlusTreeTests, ScaleTest1) {
     int64_t value = key & 0xFFFFFFFF;
     EXPECT_EQ(rids[0].GetSlotNum(), value);
   }
-
 
   bpm->UnpinPage(HEADER_PAGE_ID, true);
   delete key_schema;

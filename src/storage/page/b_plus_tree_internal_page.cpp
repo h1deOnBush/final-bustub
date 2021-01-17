@@ -40,14 +40,14 @@ INDEX_TEMPLATE_ARGUMENTS
 KeyType B_PLUS_TREE_INTERNAL_PAGE_TYPE::KeyAt(int index) const {
   // replace with your own code
   KeyType key{};
-  assert(index >= 0 && index < GetSize());
+  // assert(index >= 0 && index < GetSize());
   key = array[index].first;
   return key;
 }
 
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_INTERNAL_PAGE_TYPE::SetKeyAt(int index, const KeyType &key) {
-  assert(0 <= index && index < GetSize());
+  // assert(0 <= index && index < GetSize());
   array[index].first = key;
 }
 
@@ -72,7 +72,7 @@ int B_PLUS_TREE_INTERNAL_PAGE_TYPE::ValueIndex(const ValueType &value) const {
  */
 INDEX_TEMPLATE_ARGUMENTS
 ValueType B_PLUS_TREE_INTERNAL_PAGE_TYPE::ValueAt(int index) const {
-  assert(0 <= index && index < GetSize());
+  // assert(0 <= index && index < GetSize());
   return array[index].second;
 }
 
@@ -88,16 +88,15 @@ ValueType B_PLUS_TREE_INTERNAL_PAGE_TYPE::ValueAt(int index) const {
 INDEX_TEMPLATE_ARGUMENTS
 ValueType B_PLUS_TREE_INTERNAL_PAGE_TYPE::Lookup(const KeyType &key, const KeyComparator &comparator) const {
   for (int i = 1; i < GetSize(); ++i) {
-
     if (comparator(key, array[i].first) < 0) {
-      std::cout << "want to find a value "<< key << " in the internal node and found that the i is" << i
-                << "and the key is " << array[i].first
-                << "and the internal page's size is" << GetSize() << std::endl;
-      for (int j = 0; j < GetSize(); ++j) {
-        std::cout << "want to find a value " << key <<  " in the internal node and found that the afteri is" << j
-                  << "and the key is " << array[j].first
-                  << "and the internal page's size is" << GetSize() << std::endl;
-      }
+      // std::cout << "want to find a value " << key << " in the internal node and found that the i is" << i
+      //          << "and the key is " << array[i].first << "and the internal page's size is"
+      //          << GetSize() << std::endl;
+      // for (int j = 0; j < GetSize(); ++j) {
+      //   std::cout << "want to find a value " << key << " in the internal node and found that the afteri is" << j
+      //            << "and the key is " << array[j].first << "and the internal page's size is"
+      //            << GetSize() << std::endl;
+      // }
       return array[i - 1].second;
     }
   }
@@ -168,9 +167,9 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::CopyNFrom(MappingType *items, int size, Buf
     array[i + old_size] = items[i];
     page_id_t pageId = items[i].second;
     Page *page = buffer_pool_manager->FetchPage(pageId);
-    if (page == nullptr) {
-      throw Exception(ExceptionType::OUT_OF_MEMORY, "fail in CopNFrom in internal_page");
-    }
+    // if (page == nullptr) {
+    //  throw Exception(ExceptionType::OUT_OF_MEMORY, "fail in CopNFrom in internal_page");
+    // }
     B_PLUS_TREE_INTERNAL_PAGE_TYPE *node = reinterpret_cast<B_PLUS_TREE_INTERNAL_PAGE_TYPE *>(page->GetData());
     node->SetParentPageId(GetPageId());
     buffer_pool_manager->UnpinPage(pageId, true);
@@ -202,7 +201,7 @@ INDEX_TEMPLATE_ARGUMENTS
 ValueType B_PLUS_TREE_INTERNAL_PAGE_TYPE::RemoveAndReturnOnlyChild() {
   ValueType value = array[0].second;
   IncreaseSize(-1);
-  assert(GetSize() == 0);
+  // assert(GetSize() == 0);
   return value;
 }
 /*****************************************************************************

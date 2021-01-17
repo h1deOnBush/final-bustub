@@ -171,7 +171,7 @@ TEST(BPlusTreeConcurrentTest, InsertTest2) {
     rids.clear();
     index_key.SetFromInteger(key);
     tree.GetValue(index_key, &rids);
-    std::cout << index_key << std::endl;
+    // std::cout << index_key << std::endl;
     EXPECT_EQ(rids.size(), 1);
 
     int64_t value = key & 0xFFFFFFFF;

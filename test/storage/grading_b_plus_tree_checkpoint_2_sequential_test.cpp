@@ -390,7 +390,7 @@ TEST(BPlusTreeTests, ScaleTest) {
   int64_t size = 0;
   index_key.SetFromInteger(start_key);
   std::vector<int> for_insert;
-  for(int i = 9900; i < 10000; i++) {
+  for (int i = 9900; i < 10000; i++) {
     for_insert.push_back(i);
   }
   for (auto pair : tree) {
@@ -471,7 +471,6 @@ TEST(BPlusTreeTests, SequentialMixTest) {
   }
   int total_size = 0;
   for (auto pair : tree) {
-
     EXPECT_EQ((pair.first).ToString(), for_total[total_size]);
     total_size++;
   }

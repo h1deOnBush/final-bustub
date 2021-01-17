@@ -80,10 +80,9 @@ class BPlusTree {
   // read data from file and remove one by one
   void RemoveFromFile(const std::string &file_name, Transaction *transaction = nullptr);
   // expose for test purpose
-  Page *FindLeafPage(const KeyType &key, bool leftMost = false, Transaction *transaction = nullptr); // 读锁
+  Page *FindLeafPage(const KeyType &key, bool leftMost = false);  // 读锁
 
  private:
-
   void StartNewTree(const KeyType &key, const ValueType &value);
 
   bool InsertIntoLeaf(const KeyType &key, const ValueType &value, Transaction *transaction = nullptr);
@@ -95,7 +94,7 @@ class BPlusTree {
   N *Split(N *node, Transaction *transaction);
 
   template <typename N>
-  bool CoalesceOrRedistribute(N *&node, Transaction *transaction = nullptr);
+  bool CoalesceOrRedistribute(N **node, Transaction *transaction = nullptr);
 
   template <typename N>
   bool Coalesce(N *neighbor_node, N *node, BPlusTreeInternalPage<KeyType, page_id_t, KeyComparator> *parent, int index,
@@ -112,19 +111,18 @@ class BPlusTree {
   template <typename N>
   int findSibling(N *node, BPlusTreeInternalPage<KeyType, page_id_t, KeyComparator> *parent);
 
-
   /* helper function for latch crabbing below */
   template <typename N>
   bool coalesceOrNot(N *node, N *sibling);
   /* op == 1 means insert; op == 2 means delete */
-  template<typename N>
+  template <typename N>
   bool Safe(N *node, int op);
 
-  Page* Search(const KeyType &key, int op, Transaction *transaction);
+  Page *Search(const KeyType &key, int op, Transaction *transaction);
 
-  void LockPage(Page* page, bool enable, int op = 0); // enable == true means WLatch,  enable == false means RLatch
+  void LockPage(Page *page, bool enable, int op = 0);  // enable == true means WLatch,  enable == false means RLatch
 
-  void UnlockPage(Page* page, bool enable, int op = 0);
+  void UnlockPage(Page *page, bool enable, int op = 0);
 
   /* op == 0 means search ;op == 1 means insert; op == 2 means delete */
   // void FetchPage(Page *page, int op, Transaction *transaction); //
@@ -137,8 +135,6 @@ class BPlusTree {
 
   void LockRoot(bool exclusive, int op = 0);
   void UnlockRoot(bool exclusive, int op = 0);
-
-  // void addIntoTransactionPageSet(Page *page, Transaction *transaction);
 
   // member variable
   std::string index_name_;
