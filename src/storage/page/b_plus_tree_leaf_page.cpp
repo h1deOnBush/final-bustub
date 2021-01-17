@@ -9,6 +9,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+// #include <cstring>
 #include <sstream>
 
 #include "common/exception.h"
@@ -52,8 +53,9 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::SetNextPageId(page_id_t next_page_id) { next_pa
 INDEX_TEMPLATE_ARGUMENTS
 int B_PLUS_TREE_LEAF_PAGE_TYPE::KeyIndex(const KeyType &key, const KeyComparator &comparator) const {
   int size = GetSize();
-  int l = 0, r = size - 1;
-  while(l < r) {
+  int l = 0;
+  int r = size - 1;
+  while (l < r) {
     int mid = (l + r) / 2;
     if (comparator(array[mid].first, key) >= 0) {
       r = mid;
@@ -141,10 +143,10 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::MoveHalfTo(BPlusTreeLeafPage *recipient, Buffer
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_LEAF_PAGE_TYPE::CopyNFrom(MappingType *items, int size) {
   int old_size = GetSize();
-  // for (int i = 0; i < size; ++i) {
-  //  array[i + old_size] = items[i];
-  // }
-  memcpy(array + old_size, items, size * sizeof(MappingType));
+  for (int i = 0; i < size; ++i) {
+    array[i + old_size] = items[i];
+  }
+  // memcpy(array + old_size, items, size * sizeof(MappingType));
   IncreaseSize(size);
 }
 
@@ -158,9 +160,10 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::CopyNFrom(MappingType *items, int size) {
  */
 INDEX_TEMPLATE_ARGUMENTS
 bool B_PLUS_TREE_LEAF_PAGE_TYPE::Lookup(const KeyType &key, ValueType *value, const KeyComparator &comparator) const {
-  int l = 0, r = GetSize() - 1;
+  int l = 0;
+  int r = GetSize() - 1;
   int mid = (l + r) / 2;
-  while(l < r) {
+  while (l < r) {
     if (comparator(array[mid].first, key) >= 0) {
       r = mid;
     } else {
@@ -177,8 +180,8 @@ bool B_PLUS_TREE_LEAF_PAGE_TYPE::Lookup(const KeyType &key, ValueType *value, co
   // for (int i = 0; i < GetSize(); ++i) {
   //  if (comparator(key, array[i].first) == 0) {
   //    *value = array[i].second;
-      // std::cout << "found the key's value, whose key is " << key << "his page id is " << GetPageId()
-      //           << "and his index is " << i << std::endl;
+  // std::cout << "found the key's value, whose key is " << key << "his page id is " << GetPageId()
+  //           << "and his index is " << i << std::endl;
   //    return true;
   //  }
   // }
@@ -200,9 +203,10 @@ bool B_PLUS_TREE_LEAF_PAGE_TYPE::Lookup(const KeyType &key, ValueType *value, co
  */
 INDEX_TEMPLATE_ARGUMENTS
 int B_PLUS_TREE_LEAF_PAGE_TYPE::RemoveAndDeleteRecord(const KeyType &key, const KeyComparator &comparator) {
-  int l = 0, r = GetSize() - 1;
+  int l = 0;
+  int r = GetSize() - 1;
   int mid = (l + r) / 2;
-  while(l < r) {
+  while (l < r) {
     if (comparator(array[mid].first, key) >= 0) {
       r = mid;
     } else {
@@ -211,10 +215,10 @@ int B_PLUS_TREE_LEAF_PAGE_TYPE::RemoveAndDeleteRecord(const KeyType &key, const 
     mid = (l + r) / 2;
   }
   if (comparator(key, array[mid].first) == 0) {
-    // for (int j = mid + 1; j < GetSize(); ++j) {
-    //  array[j - 1] = array[j];
-    // }
-    memmove(array + mid, array + mid + 1, sizeof(MappingType) * (GetSize() - mid - 1));
+    for (int j = mid + 1; j < GetSize(); ++j) {
+      array[j - 1] = array[j];
+    }
+    // memmove(array + mid, array + mid + 1, sizeof(MappingType) * (GetSize() - mid - 1));
     IncreaseSize(-1);
   }
 
@@ -245,11 +249,11 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::MoveAllTo(BPlusTreeLeafPage *recipient) {
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_LEAF_PAGE_TYPE::MoveFirstToEndOf(BPlusTreeLeafPage *recipient) {
   recipient->CopyLastFrom(array[0]);
-  // int size = GetSize() - 1;
-  memmove(array, array + 1, sizeof(MappingType) * GetSize());
-  // for (int i = 0; i < size; ++i) {
-  //   array[i] = array[i + 1];
-  // }
+  int size = GetSize() - 1;
+  // memmove(array, array + 1, sizeof(MappingType) * GetSize());
+  for (int i = 0; i < size; ++i) {
+    array[i] = array[i + 1];
+  }
   IncreaseSize(-1);
 }
 
@@ -279,7 +283,7 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::CopyFirstFrom(const MappingType &item) {
   int size = GetSize();
   // memmove(array + 1, array, sizeof(MappingType) * size);
   for (int i = size; i > 0; --i) {
-   array[i] = array[i - 1];
+    array[i] = array[i - 1];
   }
   array[0] = item;
   IncreaseSize(1);

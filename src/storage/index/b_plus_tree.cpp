@@ -10,11 +10,10 @@
 //===----------------------------------------------------------------------===//
 // #include <fnmatch.h>
 // #include <ftw.h>
+#include "storage/index/b_plus_tree.h"
 #include <string>
-
 #include "common/exception.h"
 #include "common/rid.h"
-#include "storage/index/b_plus_tree.h"
 #include "storage/page/header_page.h"
 
 namespace bustub {
@@ -194,7 +193,7 @@ bool BPLUSTREE_TYPE::InsertIntoLeaf(const KeyType &key, const ValueType &value, 
   Page *page = Search(key, 1, transaction);
   if (page == nullptr) {
     UnlockRoot(true, 1);
-  //  throw Exception("Cannot insert into the leaf, found not page");
+    //  throw Exception("Cannot insert into the leaf, found not page");
     return false;
   }
   auto *leafnode = reinterpret_cast<BPlusTreeLeafPage<KeyType, RID, KeyComparator> *>(page->GetData());
@@ -794,15 +793,13 @@ void BPLUSTREE_TYPE::FreeAllPageInTransaction(bustub::Transaction *transaction, 
       UnlockPage(pn, true, op);
       buffer_pool_manager_->UnpinPage(pageId, true);
       if (check && (pageId == root_page_id_)) {  // 这里为什么可以不加锁就用root_page_id,是有一个正确不变量保证的
-                            // 我们是先LockRoot，再LockRootPage,因此我们得先UnlockRootPage,再UnlockRoot
-                            // 为了保证正确性，首先我们这里不会对root_page_id进行修改操作，第二这棵b+树如果
-                            // root_page_id的值在这个过程中改了，因为我们的父亲还在被锁着，所以轮不到子节点等于
-                            // root_page_id，间接保证了正确性。
+        // 我们是先LockRoot，再LockRootPage,因此我们得先UnlockRootPage,再UnlockRoot
+        // 为了保证正确性，首先我们这里不会对root_page_id进行修改操作，第二这棵b+树如果
+        // root_page_id的值在这个过程中改了，因为我们的父亲还在被锁着，所以轮不到子节点等于
+        // root_page_id，间接保证了正确性。
         UnlockRoot(true, op);
         check = false;
       }
-
-
     }
   } else if (op == 2) {
     auto deleted_page_set = transaction->GetDeletedPageSet();
