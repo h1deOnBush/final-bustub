@@ -8,8 +8,8 @@
 // Copyright (c) 2018, Carnegie Mellon University Database Group
 //
 //===----------------------------------------------------------------------===//
-// #include <fnmatch.h>
-// #include <ftw.h>
+#include <fnmatch.h>
+#include <ftw.h>
 #include "storage/index/b_plus_tree.h"
 #include <string>
 #include "common/exception.h"
