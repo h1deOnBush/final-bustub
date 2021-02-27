@@ -45,6 +45,7 @@ bool TablePage::InsertTuple(const Tuple &tuple, RID *rid, Transaction *txn, Lock
 
   // Try to find a free slot to reuse.
   uint32_t i;
+
   for (i = 0; i < GetTupleCount(); i++) {
     // If the slot is empty, i.e. its tuple has size 0,
     if (GetTupleSize(i) == 0) {
@@ -52,7 +53,6 @@ bool TablePage::InsertTuple(const Tuple &tuple, RID *rid, Transaction *txn, Lock
       break;
     }
   }
-
   // If there was no free slot left, and we cannot claim it from the free space, then we give up.
   if (i == GetTupleCount() && GetFreeSpaceRemaining() < tuple.size_ + SIZE_TUPLE) {
     return false;
@@ -146,7 +146,7 @@ bool TablePage::UpdateTuple(const Tuple &new_tuple, Tuple *old_tuple, const RID 
     }
     return false;
   }
-  // If there is not enuogh space to update, we need to update via delete followed by an insert (not enough space).
+  // If there is not enough space to update, we need to update via delete followed by an insert (not enough space).
   if (GetFreeSpaceRemaining() + tuple_size < new_tuple.size_) {
     return false;
   }

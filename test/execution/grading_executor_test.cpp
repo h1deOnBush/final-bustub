@@ -190,7 +190,6 @@ TEST_F(GradingExecutorTest, SimpleIndexScanTest) {
   // Execute
   std::vector<Tuple> result_set;
   GetExecutionEngine()->Execute(&plan, &result_set, GetTxn(), GetExecutorContext());
-
   // Verify
   for (const auto &tuple : result_set) {
     ASSERT_TRUE(tuple.GetValue(out_schema, out_schema->GetColIdx("colA")).GetAs<int32_t>() > 600);
@@ -264,7 +263,7 @@ TEST_F(GradingExecutorTest, SimpleRawInsertWithIndexTest) {
 
 // NOLINTNEXTLINE
 TEST_F(GradingExecutorTest, SimpleSelectInsertTest) {
-  // INSERT INTO empty_table2 SELECT colA, colB FROM test_1 WHERE colA > 500
+  // INSERT INTO empty_table2 SELECT colA, colB FROM test_1 WHERE colA > 600
   std::unique_ptr<AbstractPlanNode> scan_plan1;
   const Schema *out_schema1;
   {
@@ -284,12 +283,12 @@ TEST_F(GradingExecutorTest, SimpleSelectInsertTest) {
   }
 
   GetExecutionEngine()->Execute(insert_plan.get(), nullptr, GetTxn(), GetExecutorContext());
+
   Schema *key_schema = ParseCreateStatement("a bigint");
   GenericComparator<8> comparator(key_schema);
   auto index_info = GetExecutorContext()->GetCatalog()->CreateIndex<GenericKey<8>, RID, GenericComparator<8>>(
       GetTxn(), "index1", "empty_table2", GetExecutorContext()->GetCatalog()->GetTable("empty_table2")->schema_,
       *key_schema, {0}, 8);
-
   // Now iterate through both tables, and make sure they have the same data
   std::unique_ptr<AbstractPlanNode> scan_plan2;
   const Schema *out_schema2;
@@ -306,7 +305,6 @@ TEST_F(GradingExecutorTest, SimpleSelectInsertTest) {
   std::vector<Tuple> result_set2;
   GetExecutionEngine()->Execute(scan_plan1.get(), &result_set1, GetTxn(), GetExecutorContext());
   GetExecutionEngine()->Execute(scan_plan2.get(), &result_set2, GetTxn(), GetExecutorContext());
-
   ASSERT_EQ(result_set1.size(), result_set2.size());
   for (size_t i = 0; i < result_set1.size(); ++i) {
     ASSERT_EQ(result_set1[i].GetValue(out_schema1, out_schema1->GetColIdx("colA")).GetAs<int32_t>(),
@@ -315,7 +313,6 @@ TEST_F(GradingExecutorTest, SimpleSelectInsertTest) {
               result_set2[i].GetValue(out_schema2, out_schema2->GetColIdx("colB")).GetAs<int32_t>());
   }
   ASSERT_EQ(result_set1.size(), 399);
-
   std::vector<RID> rids;
   for (size_t i = 0; i < result_set2.size(); ++i) {
     auto table_info = GetExecutorContext()->GetCatalog()->GetTable("empty_table2");
@@ -329,7 +326,6 @@ TEST_F(GradingExecutorTest, SimpleSelectInsertTest) {
     ASSERT_EQ(indexed_tuple.GetValue(out_schema2, out_schema2->GetColIdx("colB")).GetAs<int32_t>(),
               result_set2[i].GetValue(out_schema2, out_schema2->GetColIdx("colB")).GetAs<int32_t>());
   }
-
   delete key_schema;
 }
 
@@ -720,10 +716,10 @@ TEST_F(GradingExecutorTest, SchemaChangeSeqScan) {
 
   std::vector<Tuple> result_set1;
   GetExecutionEngine()->Execute(scan_plan1.get(), &result_set1, GetTxn(), GetExecutorContext());
-
+  std::cout << "result set 1 size : " << result_set1.size() << std::endl;
   std::vector<Tuple> result_set2;
   GetExecutionEngine()->Execute(scan_plan2.get(), &result_set2, GetTxn(), GetExecutorContext());
-
+  std::cout << "result set 2 size :" << result_set2.size() << std::endl;
   ASSERT_EQ(result_set1.size(), 399);
   ASSERT_EQ(result_set2.size(), 399);
   for (size_t i = 0; i < result_set1.size(); ++i) {

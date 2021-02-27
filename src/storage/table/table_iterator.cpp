@@ -64,6 +64,7 @@ TableIterator &TableIterator::operator++() {
   return *this;
 }
 
+//  后置++
 TableIterator TableIterator::operator++(int) {
   TableIterator clone(*this);
   ++(*this);

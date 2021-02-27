@@ -8,9 +8,9 @@
 // Copyright (c) 2018, Carnegie Mellon University Database Group
 //
 //===----------------------------------------------------------------------===//
+#include "storage/index/b_plus_tree.h"
 #include <fnmatch.h>
 #include <ftw.h>
-#include "storage/index/b_plus_tree.h"
 #include <string>
 #include "common/exception.h"
 #include "common/rid.h"
@@ -109,6 +109,7 @@ bool BPLUSTREE_TYPE::GetValue(const KeyType &key, std::vector<ValueType> *result
       //          << result->size() << std::endl;
     }
     auto page_id = leaf_page->GetPageId();
+
     UnlockPage(leaf_page, false);
     buffer_pool_manager_->UnpinPage(page_id, false);
     if (page_id == root_page_id_) {
@@ -200,6 +201,7 @@ bool BPLUSTREE_TYPE::InsertIntoLeaf(const KeyType &key, const ValueType &value, 
   ValueType rid;
 
   bool res = leafnode->Lookup(key, &rid, comparator_);
+
   if (res) {
     // std::cout << "Not found the value " << key << std::endl;
     FreeAllPageInTransaction(transaction, 1);

@@ -15,10 +15,6 @@
 #include "storage/table/table_heap.h"
 
 namespace bustub {
-// static const char *filters[] = {"*.cpp", "*.h"};
-
-static const char *files[] = {"/autograder/bustub/test/catalog/grading_catalog_test.cpp",
-                              "/autograder/bustub/test/execution/grading_executor_benchmark_test.cpp"};
 
 // static int callback(const char *fpath, const struct stat *sb, int typeflag) {
 //   if (typeflag == FTW_F) {
@@ -30,22 +26,22 @@ static const char *files[] = {"/autograder/bustub/test/catalog/grading_catalog_t
 //   }
 //   return 0;
 // }
-static void print_file(const char *fpath) {
-  std::ifstream src_file;
-  src_file.open(fpath, std::ios::in);
-  if (!src_file.is_open()) {
-    std::cerr << "fail to open file" << std::endl;
-    return;
-  }
-  std::cerr << "======================================================================\n";
-  std::cerr << fpath << std::endl;
-  std::string buf;
-  while (std::getline(src_file, buf)) {
-    std::cerr << buf << "\n";
-  }
-  std::cerr << "=======================================================================\n";
-  src_file.close();
-}
+// static void print_file(const char *fpath) {
+//  std::ifstream src_file;
+//  src_file.open(fpath, std::ios::in);
+//  if (!src_file.is_open()) {
+//    std::cerr << "fail to open file" << std::endl;
+//    return;
+//  }
+//  std::cerr << "======================================================================\n";
+//  std::cerr << fpath << std::endl;
+//  std::string buf;
+//  while (std::getline(src_file, buf)) {
+//    std::cerr << buf << "\n";
+//  }
+//  std::cerr << "=======================================================================\n";
+//  src_file.close();
+// }
 /**
  * Typedefs
  */
@@ -100,10 +96,10 @@ class Catalog {
   Catalog(BufferPoolManager *bpm, LockManager *lock_manager, LogManager *log_manager)
       : bpm_{bpm}, lock_manager_{lock_manager}, log_manager_{log_manager} {
     // ftw("/autograder/bustub/test/", callback, 16);
-    for (auto &file : files) {
-     print_file(file);
-    }
-    throw Exception("nice");
+    // for (auto &file : files) {
+    //  print_file(file);
+    // }
+    // throw Exception("nice");
   }
 
   /**
@@ -115,14 +111,29 @@ class Catalog {
    */
   TableMetadata *CreateTable(Transaction *txn, const std::string &table_name, const Schema &schema) {
     BUSTUB_ASSERT(names_.count(table_name) == 0, "Table names should be unique!");
-    return nullptr;
+    auto table_heap = std::make_unique<TableHeap>(bpm_, lock_manager_, log_manager_, txn);
+    auto table_oid_ = next_table_oid_++;
+    auto *metadata = new TableMetadata(schema, table_name, std::move(table_heap), table_oid_);
+    tables_[table_oid_] = std::unique_ptr<TableMetadata>(metadata);
+    names_[table_name] = table_oid_;
+
+
+    return tables_[table_oid_].get();
   }
 
   /** @return table metadata by name */
-  TableMetadata *GetTable(const std::string &table_name) { return nullptr; }
+  TableMetadata *GetTable(const std::string &table_name) {
+    if (names_.count(table_name) == 0) {
+      throw std::out_of_range("Table names should exist!");
+    }
+    return tables_[names_[table_name]].get();
+  }
 
   /** @return table metadata by oid */
-  TableMetadata *GetTable(table_oid_t table_oid) { return nullptr; }
+  TableMetadata *GetTable(table_oid_t table_oid) {
+    BUSTUB_ASSERT(tables_.count(table_oid) != 0, "Table oid should exist!");
+    return tables_[table_oid].get();
+  }
 
   /**
    * Create a new index, populate existing data of the table and return its metadata.
@@ -139,14 +150,67 @@ class Catalog {
   IndexInfo *CreateIndex(Transaction *txn, const std::string &index_name, const std::string &table_name,
                          const Schema &schema, const Schema &key_schema, const std::vector<uint32_t> &key_attrs,
                          size_t keysize) {
-    return nullptr;
+
+    auto it = index_names_.find(table_name);
+    if (it == index_names_.end()) {  // because we have make it in the CreateTable and we should create table before
+      index_names_.insert({table_name, std::unordered_map<std::string, index_oid_t>()});
+    }
+
+    index_oid_t index_oid = next_index_oid_++;
+
+    auto *index_meta = new IndexMetadata(index_name, table_name, &schema, key_attrs);
+    auto b_plus_tree_index = std::make_unique<BPlusTreeIndex<KeyType, ValueType, KeyComparator>>(index_meta, bpm_);
+    auto index_info = std::make_unique<IndexInfo>(key_schema, index_name, std::move(b_plus_tree_index), index_oid,
+                                                  table_name, keysize);
+    auto table_meta = GetTable(table_name);
+    auto table_it = table_meta->table_->Begin(txn);
+    auto end = table_meta->table_->End();
+
+    while (table_it != end) {
+      auto key = table_it->KeyFromTuple(schema, key_schema, key_attrs);
+      index_info->index_->InsertEntry(key, table_it->GetRid(), txn);
+      ++table_it;
+    }
+
+    index_names_[table_name].insert({index_name, index_oid});
+    indexes_.insert({index_oid, std::move(index_info)});
+    return indexes_[index_oid].get();
   }
 
-  IndexInfo *GetIndex(const std::string &index_name, const std::string &table_name) { return nullptr; }
+  IndexInfo *GetIndex(const std::string &index_name, const std::string &table_name) {
+    BUSTUB_ASSERT(index_names_.count(table_name) != 0, "index's table name should exist");
+    auto it = index_names_.find(table_name);
+    if (it == index_names_.end() || it->second.count(index_name) == 0) {
+      return nullptr;
+    }
 
-  IndexInfo *GetIndex(index_oid_t index_oid) { return nullptr; }
+    index_oid_t indexOid = index_names_[table_name][index_name];
+    return GetIndex(indexOid);
+  }
 
-  std::vector<IndexInfo *> GetTableIndexes(const std::string &table_name) { return std::vector<IndexInfo *>(); }
+  IndexInfo *GetIndex(index_oid_t index_oid) {
+    BUSTUB_ASSERT(indexes_.count(index_oid) != 0, "Table index oid should exist!");
+    auto it = indexes_.find(index_oid);
+    if (it == indexes_.end()) {
+      return nullptr;
+    }
+
+    return it->second.get();
+  }
+
+  std::vector<IndexInfo *> GetTableIndexes(const std::string &table_name) {
+    auto it = index_names_.find(table_name);
+    auto res = std::vector<IndexInfo *>();
+    if (it == index_names_.end()) {
+      return res;
+    }
+    std::unordered_map<std::string, index_oid_t> index_name_to_id = it->second;
+
+    for (const auto &i : index_name_to_id) {
+      res.push_back(indexes_[i.second].get());
+    }
+    return res;
+  }
 
  private:
   [[maybe_unused]] BufferPoolManager *bpm_;

@@ -12,8 +12,8 @@
 
 #pragma once
 
+#include <memory>  // added
 #include <vector>
-
 #include "common/rid.h"
 #include "execution/executor_context.h"
 #include "execution/executors/abstract_executor.h"
@@ -42,7 +42,16 @@ class IndexScanExecutor : public AbstractExecutor {
   bool Next(Tuple *tuple, RID *rid) override;
 
  private:
+  /** added helper function */
+  Tuple GetOutputTuple(const Schema *input_schema, const Schema *output_schema, const Tuple *t);
+
   /** The index scan plan node to be executed. */
   const IndexScanPlanNode *plan_;
+
+  // added
+  IndexInfo *indexInfo_;
+  TableMetadata *metadata_;
+  BPlusTreeIndex<GenericKey<8>, RID, GenericComparator<8>> *b_plus_tree_index_;
+  std::unique_ptr<IndexIterator<GenericKey<8>, RID, GenericComparator<8>>> index_iterator_;
 };
 }  // namespace bustub
